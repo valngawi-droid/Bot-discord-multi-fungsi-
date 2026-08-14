@@ -6,7 +6,7 @@ import {
   SlashCommandBuilder
 } from 'discord.js';
 import { applyTemplate, previewTemplate } from './setup-engine.js';
-import { cleanChannelName, safeError, splitDiscordMessage } from './utils.js';
+import { cleanChannelName, extractJsonObject, safeError, splitDiscordMessage } from './utils.js';
 
 const admin = PermissionFlagsBits.Administrator;
 const manageChannels = PermissionFlagsBits.ManageChannels;
@@ -71,6 +71,15 @@ export const commandData = [
     .addSubcommand((s) => s.setName('daftar').setDescription('Tampilkan daftar channel')),
 
   new SlashCommandBuilder()
+    .setName('buat-server').setDescription('Buat struktur server otomatis dari prompt AI').setDefaultMemberPermissions(admin)
+    .addSubcommand((s) => s.setName('prompt').setDescription('Buat dan preview rencana dari deskripsi Anda')
+      .addStringOption((o) => o.setName('deskripsi').setDescription('Contoh: buat server gaming dengan ruang staff private').setRequired(true).setMaxLength(2000)))
+    .addSubcommand((s) => s.setName('lihat').setDescription('Lihat lagi preview rencana terakhir'))
+    .addSubcommand((s) => s.setName('terapkan').setDescription('Terapkan rencana terakhir ke server')
+      .addStringOption((o) => o.setName('konfirmasi').setDescription('Ketik APPLY').setRequired(true)))
+    .addSubcommand((s) => s.setName('batal').setDescription('Hapus rencana terakhir')),
+
+  new SlashCommandBuilder()
     .setName('auto-setup').setDescription('Buat role, kategori, channel, dan aksesnya sekaligus').setDefaultMemberPermissions(admin)
     .addStringOption((o) => o.setName('kategori').setDescription('Nama kategori, contoh STAFF').setRequired(true).setMaxLength(100))
     .addStringOption((o) => o.setName('akses').setDescription('Ketik semua, atau nama role dipisah koma').setRequired(true).setMaxLength(1000))
@@ -126,6 +135,47 @@ function historyKey(interaction) {
   return `${interaction.guildId}:${interaction.channelId}:${interaction.user.id}`;
 }
 
+const pendingServerPlans = new Map();
+const PLAN_TTL_MS = 30 * 60 * 1000;
+
+function planKey(interaction) {
+  return `${interaction.guildId}:${interaction.user.id}`;
+}
+
+function getPendingPlan(interaction) {
+  const key = planKey(interaction);
+  const plan = pendingServerPlans.get(key);
+  if (plan && Date.now() - plan.createdAt <= PLAN_TTL_MS) return plan;
+  pendingServerPlans.delete(key);
+  return null;
+}
+
+function setupGeneratorPrompt(description) {
+  return `Anda adalah generator konfigurasi server Discord. Ubah permintaan pengguna menjadi SATU object JSON valid, tanpa markdown dan tanpa penjelasan.
+
+Schema wajib:
+{"roles":[{"name":"string","color":"#RRGGBB","hoist":false,"mentionable":true,"permissions":["PermissionName"]}],"categories":[{"name":"string","everyone":{"allow":["PermissionName"],"deny":["PermissionName"]},"roles":{"Nama Role":{"allow":["PermissionName"],"deny":["PermissionName"]}},"channels":[{"name":"string","type":"text|voice|announcement|forum|stage","topic":"string","everyone":{"allow":[],"deny":[]},"roles":{}}]}]}
+
+Aturan:
+- Semua role yang disebut dalam category/channel roles WAJIB ada di array roles.
+- Gunakan nama permission discord.js yang valid, misalnya ViewChannel, SendMessages, ReadMessageHistory, ManageMessages, Connect, Speak, ManageChannels, ManageRoles, ModerateMembers, KickMembers.
+- Untuk area private: category.everyone.deny berisi ViewChannel dan role yang berhak mendapat allow ViewChannel.
+- Untuk channel pengumuman/peraturan: @everyone dapat ViewChannel dan ReadMessageHistory tetapi deny SendMessages; Admin/Moderator allow SendMessages.
+- Jangan membuat permission Administrator kecuali diminta secara eksplisit.
+- Maksimal 20 role, 20 kategori, dan 80 channel. Buat struktur yang ringkas dan masuk akal.
+- Properti opsional yang tidak diperlukan boleh dihilangkan. Output harus dapat diparse JSON.parse.
+
+Permintaan pengguna:
+${description}`;
+}
+
+function planPreview(guild, template) {
+  const actions = previewTemplate(guild, template);
+  const shown = actions.slice(0, 55).join('\n');
+  const suffix = actions.length > 55 ? `\n...dan ${actions.length - 55} item lainnya.` : '';
+  return `**Rencana AI siap (${actions.length} item):**\n\`\`\`\n${shown}${suffix}\n\`\`\`\nPeriksa file JSON terlampir. Jika sudah benar, jalankan \`/buat-server terapkan konfirmasi:APPLY\` dalam 30 menit.`;
+}
+
 export async function handleCommand(interaction, context) {
   if (!interaction.isChatInputCommand()) return;
   if (!interaction.inGuild() && !['ai', 'ping'].includes(interaction.commandName)) {
@@ -150,6 +200,8 @@ export async function handleCommand(interaction, context) {
         return await categoryCommand(interaction);
       case 'channel':
         return await channelCommand(interaction);
+      case 'buat-server':
+        return await promptSetupCommand(interaction, context);
       case 'auto-setup':
         return await autoSetupCommand(interaction);
       case 'akses-channel':
@@ -285,6 +337,50 @@ async function channelCommand(interaction) {
   if (channel.id === interaction.channelId) await interaction.reply({ content: `✅ Menghapus channel **${name}**...`, ephemeral: true });
   await channel.delete(`Dihapus oleh ${interaction.user.tag}`);
   if (channel.id !== interaction.channelId) return interaction.reply({ content: `✅ Channel **${name}** dihapus.`, ephemeral: true });
+}
+
+async function promptSetupCommand(interaction, { aiClient }) {
+  const action = interaction.options.getSubcommand();
+  const key = planKey(interaction);
+
+  if (action === 'batal') {
+    pendingServerPlans.delete(key);
+    return interaction.reply({ content: '✅ Rencana setup terakhir dibatalkan.', ephemeral: true });
+  }
+
+  if (action === 'lihat') {
+    const plan = getPendingPlan(interaction);
+    if (!plan) return interaction.reply({ content: 'Belum ada rencana aktif atau rencana sudah kedaluwarsa. Gunakan `/buat-server prompt`.', ephemeral: true });
+    return interaction.reply({
+      content: planPreview(interaction.guild, plan.template),
+      files: [{ attachment: Buffer.from(JSON.stringify(plan.template, null, 2)), name: 'rencana-server.json' }],
+      ephemeral: true
+    });
+  }
+
+  if (action === 'terapkan') {
+    if (interaction.options.getString('konfirmasi', true) !== 'APPLY') {
+      throw new Error('Konfirmasi harus persis: APPLY');
+    }
+    const plan = getPendingPlan(interaction);
+    if (!plan) throw new Error('Rencana tidak ditemukan atau sudah kedaluwarsa. Buat ulang dengan `/buat-server prompt`.');
+    await interaction.deferReply({ ephemeral: true });
+    const result = await applyTemplate(interaction.guild, plan.template, `Setup prompt AI oleh ${interaction.user.tag}`);
+    pendingServerPlans.delete(key);
+    return interaction.editReply(`✅ Rencana AI diterapkan. Dibuat: **${result.roles} role**, **${result.categories} kategori**, dan **${result.channels} channel**. Item yang sudah ada dilewati.`);
+  }
+
+  await interaction.deferReply({ ephemeral: true });
+  const description = interaction.options.getString('deskripsi', true);
+  const answer = await aiClient.chat([{ role: 'user', content: setupGeneratorPrompt(description) }]);
+  const template = extractJsonObject(answer);
+  // previewTemplate sekaligus memvalidasi seluruh nama permission, tipe, dan referensi role.
+  previewTemplate(interaction.guild, template);
+  pendingServerPlans.set(key, { template, createdAt: Date.now() });
+  return interaction.editReply({
+    content: planPreview(interaction.guild, template),
+    files: [{ attachment: Buffer.from(JSON.stringify(template, null, 2)), name: 'rencana-server.json' }]
+  });
 }
 
 function commaList(value, label, max = 30) {

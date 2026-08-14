@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanChannelName, splitDiscordMessage } from '../src/utils.js';
+import { cleanChannelName, extractJsonObject, splitDiscordMessage } from '../src/utils.js';
 import { ConversationStore } from '../src/ai-client.js';
 
  test('splitDiscordMessage menjaga setiap bagian di bawah limit', () => {
@@ -11,6 +11,15 @@ import { ConversationStore } from '../src/ai-client.js';
 
 test('cleanChannelName membuat nama text channel aman', () => {
   assert.equal(cleanChannelName('  Ruang Umum!  '), 'ruang-umum');
+});
+
+test('extractJsonObject mengambil JSON dari jawaban AI berpagar markdown', () => {
+  const result = extractJsonObject('Berikut hasilnya:\n```json\n{"roles":[],"categories":[]}\n```');
+  assert.deepEqual(result, { roles: [], categories: [] });
+});
+
+test('extractJsonObject menangani kurung kurawal dalam string', () => {
+  assert.deepEqual(extractJsonObject('teks {"topic":"contoh {aman}"} selesai'), { topic: 'contoh {aman}' });
 });
 
 test('ConversationStore membatasi riwayat', () => {

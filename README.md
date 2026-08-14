@@ -57,6 +57,7 @@ npm start
 
 | Command | Fungsi | Permission pengguna |
 |---|---|---|
+| `/buat-server prompt/lihat/terapkan/batal` | Buat struktur server dari prompt AI dengan preview | Administrator |
 | `/auto-setup` | Buat role, kategori, text/voice channel, dan akses sekaligus | Administrator |
 | `/akses-channel` | Izinkan/larang role melihat channel | Manage Channels |
 | `/setup-server` | Preview/apply template JSON tingkat lanjut | Administrator |
@@ -69,7 +70,23 @@ npm start
 
 Command penghapusan meminta kata `HAPUS`. Penghapusan kategori hanya diizinkan jika kategori kosong. `/setup-server` bersifat **non-destruktif**: hanya membuat yang belum ada dan tidak menghapus atau menimpa item lama.
 
-### Auto setup langsung dari Discord
+### Membuat server lewat prompt AI
+
+Tulis struktur yang Anda inginkan dengan bahasa biasa:
+
+```text
+/buat-server prompt deskripsi:Buat server gaming. Buat role Admin merah, Moderator oranye, dan Member biru. Buat kategori INFORMASI berisi peraturan dan pengumuman yang hanya dapat dikirim Admin. Buat kategori KOMUNITAS berisi umum, bot-command, dan voice Ngobrol. Buat kategori STAFF private yang hanya bisa dilihat Admin dan Moderator, berisi staff-chat dan Staff Voice.
+```
+
+Bot hanya membuat **rencana dan preview** terlebih dahulu. File `rencana-server.json` dilampirkan agar dapat diperiksa. Terapkan setelah benar:
+
+```text
+/buat-server terapkan konfirmasi:APPLY
+```
+
+Rencana berlaku 30 menit dan terikat pada admin yang membuatnya. Gunakan `/buat-server lihat` untuk melihat ulang atau `/buat-server batal` untuk membatalkan. Output AI selalu divalidasi sebelum dapat diterapkan; AI tidak langsung mengubah server dari tahap prompt.
+
+### Auto setup langsung dari Discord tanpa AI
 
 Contoh membuat kategori publik beserta channel:
 
@@ -232,7 +249,7 @@ npm test
 ### Troubleshooting
 
 - **Missing Permissions / Missing Access:** naikkan posisi role bot dan periksa permission bot pada server/category.
-- **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `10 slash command terdaftar otomatis`.
+- **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `11 slash command terdaftar otomatis`.
 - **401/403 dari AI:** revoke key yang pernah dibagikan, buat key baru, lalu periksa hak akses API/model.
 - **503/high demand dari Gemini:** gunakan `gemini-3.5-flash-lite`; bot otomatis mencoba ulang dan berpindah ke `GEMINI_FALLBACK_MODELS`.
 - **404 dari Gemini:** biarkan `GEMINI_BASE_URL` memakai nilai default dan periksa `GEMINI_MODEL`.
