@@ -70,6 +70,20 @@ export const commandData = [
       .addStringOption((o) => o.setName('konfirmasi').setDescription('Ketik HAPUS').setRequired(true)))
     .addSubcommand((s) => s.setName('daftar').setDescription('Tampilkan daftar channel')),
 
+  new SlashCommandBuilder()
+    .setName('auto-setup').setDescription('Buat role, kategori, channel, dan aksesnya sekaligus').setDefaultMemberPermissions(admin)
+    .addStringOption((o) => o.setName('kategori').setDescription('Nama kategori, contoh STAFF').setRequired(true).setMaxLength(100))
+    .addStringOption((o) => o.setName('akses').setDescription('Ketik semua, atau nama role dipisah koma').setRequired(true).setMaxLength(1000))
+    .addStringOption((o) => o.setName('text_channels').setDescription('Nama text channel dipisah koma').setMaxLength(1000))
+    .addStringOption((o) => o.setName('voice_channels').setDescription('Nama voice channel dipisah koma').setMaxLength(1000))
+    .addStringOption((o) => o.setName('roles').setDescription('Role tambahan yang dibuat, dipisah koma').setMaxLength(1000)),
+
+  new SlashCommandBuilder()
+    .setName('akses-channel').setDescription('Izinkan atau larang role melihat sebuah channel').setDefaultMemberPermissions(manageChannels)
+    .addChannelOption((o) => o.setName('channel').setDescription('Channel yang diatur').setRequired(true))
+    .addRoleOption((o) => o.setName('role').setDescription('Role yang diatur, termasuk @everyone').setRequired(true))
+    .addBooleanOption((o) => o.setName('bisa_melihat').setDescription('Ya = izinkan, Tidak = larang').setRequired(true)),
+
   new SlashCommandBuilder().setName('clear').setDescription('Hapus sejumlah pesan terbaru').setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
     .addIntegerOption((o) => o.setName('jumlah').setDescription('1–100 pesan').setRequired(true).setMinValue(1).setMaxValue(100)),
   new SlashCommandBuilder().setName('serverinfo').setDescription('Tampilkan informasi server'),
@@ -136,6 +150,10 @@ export async function handleCommand(interaction, context) {
         return await categoryCommand(interaction);
       case 'channel':
         return await channelCommand(interaction);
+      case 'auto-setup':
+        return await autoSetupCommand(interaction);
+      case 'akses-channel':
+        return await channelAccessCommand(interaction);
       default:
         return interaction.reply({ content: 'Command tidak dikenal.', ephemeral: true });
     }
@@ -267,6 +285,73 @@ async function channelCommand(interaction) {
   if (channel.id === interaction.channelId) await interaction.reply({ content: `✅ Menghapus channel **${name}**...`, ephemeral: true });
   await channel.delete(`Dihapus oleh ${interaction.user.tag}`);
   if (channel.id !== interaction.channelId) return interaction.reply({ content: `✅ Channel **${name}** dihapus.`, ephemeral: true });
+}
+
+function commaList(value, label, max = 30) {
+  if (!value) return [];
+  const names = [...new Map(value.split(',').map((name) => name.trim()).filter(Boolean).map((name) => [name.toLowerCase(), name])).values()];
+  if (names.length > max) throw new Error(`${label} maksimal ${max} item per command.`);
+  if (names.some((name) => name.length > 100)) throw new Error(`Nama pada ${label} maksimal 100 karakter.`);
+  return names;
+}
+
+async function autoSetupCommand(interaction) {
+  await interaction.deferReply({ ephemeral: true });
+  const categoryName = interaction.options.getString('kategori', true).trim();
+  const accessValue = interaction.options.getString('akses', true).trim();
+  const textChannels = commaList(interaction.options.getString('text_channels'), 'text channel');
+  const voiceChannels = commaList(interaction.options.getString('voice_channels'), 'voice channel');
+  const extraRoles = commaList(interaction.options.getString('roles'), 'role');
+  if (!textChannels.length && !voiceChannels.length) {
+    throw new Error('Isi minimal satu text_channels atau voice_channels. Pisahkan beberapa nama dengan koma.');
+  }
+
+  const isPublic = accessValue.toLowerCase() === 'semua';
+  const accessRoles = isPublic ? [] : commaList(accessValue, 'role akses');
+  if (!isPublic && !accessRoles.length) throw new Error('Isi akses dengan "semua" atau nama role yang boleh melihat.');
+  const allRoles = [...new Map([...extraRoles, ...accessRoles].map((name) => [name.toLowerCase(), name])).values()];
+  const roleOverwrites = Object.fromEntries(accessRoles.map((name) => [name, { allow: ['ViewChannel'] }]));
+
+  const template = {
+    roles: allRoles.map((name) => ({ name, permissions: [], mentionable: true })),
+    categories: [{
+      name: categoryName,
+      everyone: isPublic ? undefined : { deny: ['ViewChannel'] },
+      roles: roleOverwrites,
+      channels: [
+        ...textChannels.map((name) => ({ name, type: 'text' })),
+        ...voiceChannels.map((name) => ({ name, type: 'voice' }))
+      ]
+    }]
+  };
+
+  const result = await applyTemplate(interaction.guild, template, `Auto setup oleh ${interaction.user.tag}`);
+  const category = interaction.guild.channels.cache.find((item) => item.type === ChannelType.GuildCategory && item.name.toLowerCase() === categoryName.toLowerCase());
+  if (category) {
+    await category.permissionOverwrites.edit(interaction.guild.roles.everyone, { ViewChannel: isPublic ? null : false });
+    for (const roleName of accessRoles) {
+      const role = interaction.guild.roles.cache.find((item) => item.name.toLowerCase() === roleName.toLowerCase());
+      if (role) await category.permissionOverwrites.edit(role, { ViewChannel: true });
+    }
+  }
+
+  const accessText = isPublic ? '@everyone' : accessRoles.map((name) => `@${name}`).join(', ');
+  return interaction.editReply(
+    `✅ **Auto setup selesai**\nKategori: **${categoryName}**\nAkses melihat: ${accessText}\n` +
+    `Dibuat baru: **${result.roles} role**, **${result.categories} kategori**, **${result.channels} channel**. Item yang sudah ada dilewati.`
+  );
+}
+
+async function channelAccessCommand(interaction) {
+  const channel = interaction.options.getChannel('channel', true);
+  const role = interaction.options.getRole('role', true);
+  const canView = interaction.options.getBoolean('bisa_melihat', true);
+  if (!channel.permissionOverwrites) throw new Error('Permission channel ini tidak dapat diubah.');
+  await channel.permissionOverwrites.edit(role, { ViewChannel: canView }, { reason: `Diatur oleh ${interaction.user.tag}` });
+  return interaction.reply({
+    content: `✅ ${role} sekarang **${canView ? 'boleh' : 'tidak boleh'}** melihat ${channel}.`,
+    ephemeral: true
+  });
 }
 
 async function clearMessages(interaction) {
