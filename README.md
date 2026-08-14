@@ -33,7 +33,7 @@ DISCORD_GUILD_ID=id_server_uji
 
 AI_PROVIDER=gemini
 GEMINI_API_KEY=masukkan_key_baru_di_sini
-GEMINI_MODEL=gemini-flash-latest
+GEMINI_MODEL=gemini-3.5-flash-lite
 ```
 
 `DISCORD_GUILD_ID` direkomendasikan agar slash command muncul segera. `REGISTER_COMMANDS_ON_START=true` mendaftarkan command otomatis saat bot dinyalakan. Jika guild ID dikosongkan, command didaftarkan secara global dan propagasinya dapat memerlukan waktu.
@@ -123,7 +123,9 @@ Buat key baru di Google AI Studio, lalu masukkan langsung ke `.env`—jangan kir
 ```env
 AI_PROVIDER=gemini
 GEMINI_API_KEY=key_baru_anda
-GEMINI_MODEL=gemini-flash-latest
+GEMINI_MODEL=gemini-3.5-flash-lite
+GEMINI_FALLBACK_MODELS=gemini-3.1-flash-lite,gemini-2.5-flash
+AI_MAX_RETRIES=3
 GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
 ```
 
@@ -210,6 +212,7 @@ npm test
 - **Missing Permissions / Missing Access:** naikkan posisi role bot dan periksa permission bot pada server/category.
 - **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `8 slash command terdaftar otomatis`.
 - **401/403 dari AI:** revoke key yang pernah dibagikan, buat key baru, lalu periksa hak akses API/model.
+- **503/high demand dari Gemini:** gunakan `gemini-3.5-flash-lite`; bot otomatis mencoba ulang dan berpindah ke `GEMINI_FALLBACK_MODELS`.
 - **404 dari Gemini:** biarkan `GEMINI_BASE_URL` memakai nilai default dan periksa `GEMINI_MODEL`.
 - **404 dari OpenAI-compatible:** base URL biasanya harus berakhir dengan `/v1`.
 - **Unknown model:** periksa `GEMINI_MODEL` atau `LMARENA_MODEL` sesuai provider.

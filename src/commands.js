@@ -123,19 +123,19 @@ export async function handleCommand(interaction, context) {
       case 'ping':
         return interaction.reply({ content: `Pong! WebSocket: ${interaction.client.ws.ping} ms`, ephemeral: true });
       case 'serverinfo':
-        return serverInfo(interaction);
+        return await serverInfo(interaction);
       case 'clear':
-        return clearMessages(interaction);
+        return await clearMessages(interaction);
       case 'ai':
-        return aiCommand(interaction, context);
+        return await aiCommand(interaction, context);
       case 'setup-server':
-        return setupServer(interaction);
+        return await setupServer(interaction);
       case 'role':
-        return roleCommand(interaction);
+        return await roleCommand(interaction);
       case 'category':
-        return categoryCommand(interaction);
+        return await categoryCommand(interaction);
       case 'channel':
-        return channelCommand(interaction);
+        return await channelCommand(interaction);
       default:
         return interaction.reply({ content: 'Command tidak dikenal.', ephemeral: true });
     }

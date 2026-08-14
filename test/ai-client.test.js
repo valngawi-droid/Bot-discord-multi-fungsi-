@@ -6,7 +6,9 @@ const baseConfig = {
   provider: 'gemini',
   baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
   apiKey: 'test-key-not-secret',
-  model: 'gemini-flash-latest',
+  model: 'gemini-3.5-flash-lite',
+  fallbackModels: ['gemini-3.1-flash-lite'],
+  maxRetries: 0,
   systemPrompt: 'Jawab singkat.',
   maxTokens: 100,
   temperature: 0.5,
@@ -25,7 +27,7 @@ test('Gemini client mengirim format native dan membaca jawaban', async () => {
   const answer = await client.chat([{ role: 'user', content: 'Halo' }]);
 
   assert.equal(answer, 'Halo dunia');
-  assert.match(request.url, /gemini-flash-latest:generateContent$/);
+  assert.match(request.url, /gemini-3\.5-flash-lite:generateContent$/);
   assert.equal(request.options.headers['x-goog-api-key'], 'test-key-not-secret');
   const body = JSON.parse(request.options.body);
   assert.equal(body.system_instruction.parts[0].text, 'Jawab singkat.');
@@ -35,5 +37,17 @@ test('Gemini client mengirim format native dan membaca jawaban', async () => {
 test('Gemini client menampilkan pesan error API tanpa membocorkan key', async () => {
   const fakeFetch = async () => new Response(JSON.stringify({ error: { message: 'API key invalid' } }), { status: 400 });
   const client = new AiClient(baseConfig, fakeFetch);
-  await assert.rejects(() => client.chat([{ role: 'user', content: 'Tes' }]), /Gemini gagal \(400\): API key invalid/);
+  await assert.rejects(() => client.chat([{ role: 'user', content: 'Tes' }]), /Gemini model .* gagal \(400\): API key invalid/);
+});
+
+test('Gemini client mencoba kembali setelah respons 503', async () => {
+  let calls = 0;
+  const fakeFetch = async () => {
+    calls++;
+    if (calls === 1) return new Response(JSON.stringify({ error: { message: 'High demand' } }), { status: 503 });
+    return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'Berhasil' }] } }] }), { status: 200 });
+  };
+  const client = new AiClient({ ...baseConfig, maxRetries: 1 }, fakeFetch);
+  assert.equal(await client.chat([{ role: 'user', content: 'Tes' }]), 'Berhasil');
+  assert.equal(calls, 2);
 });

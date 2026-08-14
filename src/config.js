@@ -30,7 +30,10 @@ export const config = {
       ? (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta')
       : (process.env.LMARENA_BASE_URL || '')).replace(/\/$/, ''),
     apiKey: aiProvider === 'gemini' ? (process.env.GEMINI_API_KEY || '') : (process.env.LMARENA_API_KEY || ''),
-    model: aiProvider === 'gemini' ? (process.env.GEMINI_MODEL || 'gemini-flash-latest') : (process.env.LMARENA_MODEL || ''),
+    model: aiProvider === 'gemini' ? (process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite') : (process.env.LMARENA_MODEL || ''),
+    fallbackModels: (process.env.GEMINI_FALLBACK_MODELS || 'gemini-3.1-flash-lite,gemini-2.5-flash')
+      .split(',').map((model) => model.trim()).filter(Boolean),
+    maxRetries: numberEnv('AI_MAX_RETRIES', 3),
     systemPrompt: process.env.AI_SYSTEM_PROMPT || 'Kamu adalah asisten yang ramah dan membantu.',
     maxTokens: numberEnv('AI_MAX_TOKENS', 1200),
     temperature: numberEnv('AI_TEMPERATURE', 0.7),
