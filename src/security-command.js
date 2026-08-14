@@ -11,6 +11,12 @@ export const securityCommandData = new SlashCommandBuilder()
     .addStringOption((o) => o.setName('mode').setDescription('Tingkat keamanan').addChoices(
       { name: 'Aman (disarankan)', value: 'aman' }, { name: 'Ketat', value: 'ketat' }
     )))
+  .addSubcommand((s) => s.setName('langsung').setDescription('Analisis AI dan langsung terapkan seluruh permission')
+    .addChannelOption((o) => o.setName('kategori').setDescription('Kosong = seluruh server').addChannelTypes(ChannelType.GuildCategory))
+    .addStringOption((o) => o.setName('mode').setDescription('Tingkat keamanan').addChoices(
+      { name: 'Aman (disarankan)', value: 'aman' }, { name: 'Ketat', value: 'ketat' }
+    ))
+    .addStringOption((o) => o.setName('konfirmasi').setDescription('Ketik APPLY').setRequired(true)))
   .addSubcommand((s) => s.setName('lihat').setDescription('Lihat kembali rencana keamanan terakhir'))
   .addSubcommand((s) => s.setName('terapkan').setDescription('Terapkan rencana permission terakhir')
     .addStringOption((o) => o.setName('konfirmasi').setDescription('Ketik APPLY').setRequired(true)))
@@ -28,6 +34,18 @@ export async function handleSecurityCommand(interaction, context) {
     const plan = getPlan(key);
     if (!plan) return interaction.reply({ content: 'Tidak ada rencana aktif. Jalankan `/autokeamanan analisis`.', ephemeral: true });
     return sendPreview(interaction, plan);
+  }
+  if (action === 'langsung') {
+    if (interaction.options.getString('konfirmasi', true) !== 'APPLY') throw new Error('Konfirmasi harus persis: APPLY');
+    await interaction.deferReply({ ephemeral: true });
+    const category = interaction.options.getChannel('kategori');
+    const mode = interaction.options.getString('mode') || 'aman';
+    await interaction.editReply('⏳ AI sedang menganalisis category, channel, role, dan permission server...');
+    const plan = await generateSecurityPlan(context.aiClient, interaction.guild, category?.id, mode);
+    await interaction.editReply(`⏳ AI menghasilkan **${plan.actions.length} tindakan**. Sedang menerapkan permission...`);
+    const count = await applySecurityPlan(interaction.guild, plan, `Auto keamanan langsung oleh ${interaction.user.tag}`);
+    await context.audit?.send('Auto Keamanan Langsung', `${interaction.user.tag} menganalisis dan menerapkan ${count} permission action di ${interaction.guild.name}`);
+    return interaction.editReply(`✅ **Auto keamanan selesai.** AI menganalisis dan menerapkan **${count} pengaturan permission** dalam mode **${mode}**.`);
   }
   if (action === 'terapkan') {
     if (interaction.options.getString('konfirmasi', true) !== 'APPLY') throw new Error('Konfirmasi harus persis: APPLY');

@@ -4,7 +4,7 @@ export const OWNER_COMMANDS = new Set([
   'setup-server', 'buat-server', 'auto-setup', 'role', 'category', 'channel', 'akses-channel', 'owner', 'helpowner'
 ]);
 export const ADMIN_COMMANDS = new Set(['clear', 'admin', 'helpadmin']);
-export const MEMBER_COMMANDS = new Set(['ai', 'serverinfo', 'ping', 'member', 'helpmember']);
+export const MEMBER_COMMANDS = new Set(['ai', 'serverinfo', 'ping', 'member', 'helpmember', 'help']);
 
 export function memberAccessLevel(member, access) {
   if (!member?.roles?.cache) return 'none';

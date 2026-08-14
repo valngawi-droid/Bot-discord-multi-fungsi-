@@ -2,6 +2,7 @@ import {
   ActivityType, ChannelType, EmbedBuilder, PermissionFlagsBits, SlashCommandBuilder
 } from 'discord.js';
 import { splitDiscordMessage } from './utils.js';
+import { memberAccessLevel } from './access-control.js';
 
 const memberNames = [
   ['profile', 'Lihat profil anggota'], ['avatar', 'Lihat avatar anggota'], ['server', 'Informasi singkat server'],
@@ -98,20 +99,62 @@ export const roleCommandData = [
   buildGroup('admin', 'Kumpulan fitur moderasi khusus admin', adminNames),
   buildGroup('owner', 'Kumpulan kontrol khusus owner', ownerNames),
   permissionCommand(),
+  new SlashCommandBuilder().setName('help').setDescription('Tampilkan semua command sesuai role Anda'),
   new SlashCommandBuilder().setName('helpmember').setDescription('Daftar fitur khusus member'),
   new SlashCommandBuilder().setName('helpadmin').setDescription('Daftar fitur khusus admin'),
   new SlashCommandBuilder().setName('helpowner').setDescription('Daftar fitur khusus owner')
 ].map((command) => command.toJSON());
 
-export const groupedFunctionCount = memberNames.length + adminNames.length + ownerNames.length + 3 + 8;
+export const groupedFunctionCount = memberNames.length + adminNames.length + ownerNames.length + 4 + 8;
 
 export async function handleRoleCommand(interaction, context) {
+  if (interaction.commandName === 'help') return allHelp(interaction, context);
   if (interaction.commandName.startsWith('help')) return help(interaction);
   const sub = interaction.options.getSubcommand();
   if (interaction.commandName === 'permission') return permission(interaction, sub);
   if (interaction.commandName === 'member') return member(interaction, sub);
   if (interaction.commandName === 'admin') return admin(interaction, sub);
   if (interaction.commandName === 'owner') return owner(interaction, sub, context);
+}
+
+async function allHelp(interaction, context) {
+  const memberObject = await interaction.guild.members.fetch(interaction.user.id);
+  const level = memberAccessLevel(memberObject, context.config.access);
+  const lines = [
+    `**SEMUA COMMAND — AKSES ${level.toUpperCase()}**`,
+    '`/help` — Daftar otomatis sesuai role',
+    '`/ai chat` `/ai reset` `/ai status` — Asisten Gemini',
+    '`/ping` `/serverinfo` — Informasi bot/server',
+    ...memberNames.map(([name, description]) => `\`/member ${name}\` — ${description}`),
+    '`/helpmember` — Help ringkas Member'
+  ];
+  if (['admin', 'owner'].includes(level)) {
+    lines.push(
+      '\n**ADMIN**',
+      '`/clear` — Hapus pesan',
+      ...adminNames.map(([name, description]) => `\`/admin ${name}\` — ${description}`),
+      '`/helpadmin` — Help ringkas Admin'
+    );
+  }
+  if (level === 'owner') {
+    lines.push(
+      '\n**OWNER**',
+      ...ownerNames.map(([name, description]) => `\`/owner ${name}\` — ${description}`),
+      '`/permission view|chat|voice|readonly|private|public|sync-category|inspect` — Permission manual',
+      '`/autokeamanan analisis|langsung|lihat|terapkan|batal` — Auto permission berbasis AI',
+      '`/buat-server prompt|lihat|terapkan|batal` — Setup melalui prompt AI',
+      '`/setup-server` — Setup melalui file JSON',
+      '`/auto-setup` — Setup category/channel langsung',
+      '`/role buat|hapus|daftar` — Kelola role',
+      '`/category buat|hapus|daftar` — Kelola kategori',
+      '`/channel buat|hapus|daftar` — Kelola channel',
+      '`/akses-channel` — Atur role yang bisa melihat channel',
+      '`/helpowner` — Help ringkas Owner'
+    );
+  }
+  const chunks = splitDiscordMessage(lines.join('\n'), 1850);
+  await interaction.reply({ content: chunks.shift(), ephemeral: true });
+  for (const chunk of chunks) await interaction.followUp({ content: chunk, ephemeral: true });
 }
 
 function help(interaction) {

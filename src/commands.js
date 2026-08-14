@@ -99,7 +99,7 @@ const coreCommandData = [
 ].map((command) => command.toJSON());
 
 export const commandData = [...coreCommandData, ...roleCommandData, securityCommandData];
-export const totalFunctionCount = 22 + groupedFunctionCount + 4;
+export const totalFunctionCount = 22 + groupedFunctionCount + 5;
 
 const channelTypes = {
   text: ChannelType.GuildText,
@@ -179,7 +179,7 @@ export async function handleCommand(interaction, context) {
       }
     }
 
-    if (['member', 'admin', 'owner', 'permission', 'helpmember', 'helpadmin', 'helpowner'].includes(interaction.commandName)) {
+    if (['member', 'admin', 'owner', 'permission', 'help', 'helpmember', 'helpadmin', 'helpowner'].includes(interaction.commandName)) {
       return await handleRoleCommand(interaction, context);
     }
     if (interaction.commandName === 'autokeamanan') {

@@ -57,6 +57,7 @@ npm start
 
 | Command | Fungsi | Permission pengguna |
 |---|---|---|
+| `/help` | Semua command yang tersedia sesuai hierarki role | Member, Admin, Owner |
 | `/member ...`, `/helpmember` | 20 utilitas profil/server/random | Member, Admin, Owner |
 | `/admin ...`, `/helpadmin` | 25 fitur moderasi dan channel | Admin, Owner |
 | `/owner ...`, `/helpowner` | 20 kontrol bot/server | Owner |
@@ -70,7 +71,7 @@ npm start
 | `/ai chat/reset/status`, `/serverinfo`, `/ping` | Chat AI dan informasi | Member, Admin, Owner |
 | `/clear` | Hapus 1–100 pesan terbaru | Admin, Owner |
 
-Bot menyediakan **102 fungsi aktif** dalam 19 slash command tingkat atas. Fungsi dikelompokkan agar tidak memenuhi daftar Discord dan tetap berada di bawah batas 100 command aplikasi. Gunakan `/helpmember`, `/helpadmin`, dan `/helpowner` untuk daftar sesuai role.
+Bot menyediakan **104 fungsi aktif** dalam 20 slash command tingkat atas. Discord membatasi maksimal 100 top-level application command per scope, sehingga ratusan fungsi harus dikelompokkan sebagai subcommand. Gunakan `/help` untuk menampilkan seluruh command sesuai role secara otomatis; output panjang dibagi menjadi beberapa pesan. `/helpmember`, `/helpadmin`, dan `/helpowner` menyediakan daftar ringkas.
 
 Hierarki akses bersifat menurun: Owner dapat memakai semua fitur; Admin dapat memakai Admin dan Member; Member hanya fitur Member. Konfigurasikan ID role:
 
@@ -96,11 +97,19 @@ Untuk menganalisis hanya satu kategori:
 /autokeamanan analisis kategori:INFORMATION & RULES mode:Ketat
 ```
 
-Bot menampilkan preview dan file `rencana-keamanan.json`. AI tidak langsung mengubah server. Setelah diperiksa:
+Bot menampilkan preview dan file `rencana-keamanan.json`. Setelah diperiksa:
 
 ```text
 /autokeamanan terapkan konfirmasi:APPLY
 ```
+
+Untuk menganalisis dan langsung menerapkan seluruh rekomendasi tanpa tahap preview terpisah:
+
+```text
+/autokeamanan langsung mode:Aman konfirmasi:APPLY
+```
+
+Mode langsung tetap memvalidasi semua channel ID, role ID, dan permission sebelum apply, tetapi perubahan dapat diterapkan sebagian jika Discord menolak satu tindakan di tengah proses.
 
 Gunakan `/autokeamanan lihat` untuk membuka rencana terakhir atau `/autokeamanan batal` untuk membatalkan. Rencana berlaku 30 menit. Semua channel ID, role ID, dan permission keluaran AI divalidasi terhadap server dan whitelist sebelum dapat diterapkan.
 
@@ -331,7 +340,7 @@ npm test
 ### Troubleshooting
 
 - **Missing Permissions / Missing Access:** naikkan posisi role bot dan periksa permission bot pada server/category.
-- **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `19 slash command terdaftar otomatis` (berisi 102 fungsi/subcommand).
+- **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `20 slash command terdaftar otomatis` (berisi 104 fungsi/subcommand).
 - **401/403 dari AI:** revoke key yang pernah dibagikan, buat key baru, lalu periksa hak akses API/model.
 - **503/high demand dari Gemini:** gunakan `gemini-3.5-flash-lite`; bot otomatis mencoba ulang dan berpindah ke `GEMINI_FALLBACK_MODELS`.
 - **Invalid Form Body / channel type:** announcement channel membutuhkan Community Server. Bot otomatis membuat text channel sebagai pengganti jika Community belum aktif.
