@@ -10,6 +10,7 @@ import { generateServerPlan } from './server-planner.js';
 import { cleanChannelName, safeError, splitDiscordMessage } from './utils.js';
 import { accessDeniedMessage, canUseCommand } from './access-control.js';
 import { groupedFunctionCount, handleRoleCommand, roleCommandData } from './role-commands.js';
+import { handleSecurityCommand, securityCommandData } from './security-command.js';
 
 const coreCommandData = [
   new SlashCommandBuilder()
@@ -97,8 +98,8 @@ const coreCommandData = [
   new SlashCommandBuilder().setName('ping').setDescription('Cek respons bot')
 ].map((command) => command.toJSON());
 
-export const commandData = [...coreCommandData, ...roleCommandData];
-export const totalFunctionCount = 22 + groupedFunctionCount;
+export const commandData = [...coreCommandData, ...roleCommandData, securityCommandData];
+export const totalFunctionCount = 22 + groupedFunctionCount + 4;
 
 const channelTypes = {
   text: ChannelType.GuildText,
@@ -180,6 +181,9 @@ export async function handleCommand(interaction, context) {
 
     if (['member', 'admin', 'owner', 'permission', 'helpmember', 'helpadmin', 'helpowner'].includes(interaction.commandName)) {
       return await handleRoleCommand(interaction, context);
+    }
+    if (interaction.commandName === 'autokeamanan') {
+      return await handleSecurityCommand(interaction, context);
     }
 
     switch (interaction.commandName) {

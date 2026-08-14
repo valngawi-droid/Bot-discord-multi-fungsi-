@@ -8,7 +8,7 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "deploy": "node src/deploy-commands.js",
-    "check": "node --check src/index.js && node --check src/commands.js && node --check src/role-commands.js && node --check src/access-control.js && node --check src/audit-logger.js && node --check src/online-notifier.js && node --check src/setup-engine.js && node --check src/server-planner.js && node --check src/web-dashboard.js",
+    "check": "node --check src/index.js && node --check src/commands.js && node --check src/role-commands.js && node --check src/security-command.js && node --check src/security-planner.js && node --check src/access-control.js && node --check src/audit-logger.js && node --check src/online-notifier.js && node --check src/setup-engine.js && node --check src/server-planner.js && node --check src/web-dashboard.js",
     "test": "node --test"
   },
   "engines": {

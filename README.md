@@ -61,6 +61,7 @@ npm start
 | `/admin ...`, `/helpadmin` | 25 fitur moderasi dan channel | Admin, Owner |
 | `/owner ...`, `/helpowner` | 20 kontrol bot/server | Owner |
 | `/permission ...` | 8 pengaturan view/chat/voice/private/sync role | Owner |
+| `/autokeamanan analisis/lihat/terapkan/batal` | AI audit dan auto-setting permission | Owner |
 | `/buat-server prompt/lihat/terapkan/batal` | Buat struktur server dari prompt AI dengan preview | Owner |
 | `/auto-setup` | Buat role, kategori, text/voice channel, dan akses sekaligus | Owner |
 | `/akses-channel` | Izinkan/larang role melihat channel | Owner |
@@ -69,7 +70,7 @@ npm start
 | `/ai chat/reset/status`, `/serverinfo`, `/ping` | Chat AI dan informasi | Member, Admin, Owner |
 | `/clear` | Hapus 1–100 pesan terbaru | Admin, Owner |
 
-Bot menyediakan **98 fungsi aktif** dalam 18 slash command tingkat atas. Fungsi dikelompokkan agar tidak memenuhi daftar Discord dan tetap berada di bawah batas 100 command aplikasi. Gunakan `/helpmember`, `/helpadmin`, dan `/helpowner` untuk daftar sesuai role.
+Bot menyediakan **102 fungsi aktif** dalam 19 slash command tingkat atas. Fungsi dikelompokkan agar tidak memenuhi daftar Discord dan tetap berada di bawah batas 100 command aplikasi. Gunakan `/helpmember`, `/helpadmin`, dan `/helpowner` untuk daftar sesuai role.
 
 Hierarki akses bersifat menurun: Owner dapat memakai semua fitur; Admin dapat memakai Admin dan Member; Member hanya fitur Member. Konfigurasikan ID role:
 
@@ -80,6 +81,28 @@ MEMBER_ROLE_ID=1537795510772039870
 ```
 
 Command penghapusan meminta kata `HAPUS`. Penghapusan kategori hanya diizinkan jika kategori kosong. `/setup-server` bersifat **non-destruktif**: hanya membuat yang belum ada dan tidak menghapus atau menimpa item lama.
+
+### Auto Keamanan AI
+
+Owner dapat meminta AI membaca struktur server dan membuat rencana permission otomatis:
+
+```text
+/autokeamanan analisis mode:Aman
+```
+
+Untuk menganalisis hanya satu kategori:
+
+```text
+/autokeamanan analisis kategori:INFORMATION & RULES mode:Ketat
+```
+
+Bot menampilkan preview dan file `rencana-keamanan.json`. AI tidak langsung mengubah server. Setelah diperiksa:
+
+```text
+/autokeamanan terapkan konfirmasi:APPLY
+```
+
+Gunakan `/autokeamanan lihat` untuk membuka rencana terakhir atau `/autokeamanan batal` untuk membatalkan. Rencana berlaku 30 menit. Semua channel ID, role ID, dan permission keluaran AI divalidasi terhadap server dan whitelist sebelum dapat diterapkan.
 
 ### Permission role/category/channel
 
@@ -308,7 +331,7 @@ npm test
 ### Troubleshooting
 
 - **Missing Permissions / Missing Access:** naikkan posisi role bot dan periksa permission bot pada server/category.
-- **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `18 slash command terdaftar otomatis` (berisi 98 fungsi/subcommand).
+- **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `19 slash command terdaftar otomatis` (berisi 102 fungsi/subcommand).
 - **401/403 dari AI:** revoke key yang pernah dibagikan, buat key baru, lalu periksa hak akses API/model.
 - **503/high demand dari Gemini:** gunakan `gemini-3.5-flash-lite`; bot otomatis mencoba ulang dan berpindah ke `GEMINI_FALLBACK_MODELS`.
 - **Invalid Form Body / channel type:** announcement channel membutuhkan Community Server. Bot otomatis membuat text channel sebagai pengganti jika Community belum aktif.

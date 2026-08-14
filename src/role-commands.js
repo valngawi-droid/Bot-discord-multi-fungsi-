@@ -117,8 +117,11 @@ export async function handleRoleCommand(interaction, context) {
 function help(interaction) {
   const kind = interaction.commandName.replace('help', '');
   const definitions = kind === 'member' ? memberNames : kind === 'admin' ? adminNames : ownerNames;
+  const ownerExtras = kind === 'owner'
+    ? '\n`/autokeamanan analisis` — AI audit dan auto setting permission\n`/permission ...` — Pengaturan permission manual'
+    : '';
   const inherited = kind === 'owner' ? '\nOwner juga dapat memakai semua fitur Admin dan Member.' : kind === 'admin' ? '\nAdmin juga dapat memakai semua fitur Member.' : '';
-  return interaction.reply({ content: `**Help ${kind.toUpperCase()}**\n${definitions.map(([n, d]) => `\`/${kind} ${n}\` — ${d}`).join('\n')}${inherited}`, ephemeral: true });
+  return interaction.reply({ content: `**Help ${kind.toUpperCase()}**\n${definitions.map(([n, d]) => `\`/${kind} ${n}\` — ${d}`).join('\n')}${ownerExtras}${inherited}`, ephemeral: true });
 }
 
 async function permission(i, sub) {
