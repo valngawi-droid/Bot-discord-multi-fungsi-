@@ -1,7 +1,9 @@
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { AiClient, ConversationStore } from './ai-client.js';
-import { commandData, handleCommand } from './commands.js';
+import { AuditLogger } from './audit-logger.js';
+import { commandData, handleCommand, totalFunctionCount } from './commands.js';
 import { config, requireDiscordConfig } from './config.js';
+import { notifyOnline } from './online-notifier.js';
 import { registerCommands } from './register-commands.js';
 import { safeError, splitDiscordMessage } from './utils.js';
 import { startWebDashboard } from './web-dashboard.js';
@@ -14,7 +16,13 @@ if (config.ai.replyOnMention) intents.push(GatewayIntentBits.MessageContent);
 const client = new Client({ intents });
 const aiClient = new AiClient(config.ai);
 const conversations = new ConversationStore(12);
-const context = { aiClient, conversations, aiConfig: config.ai };
+const audit = new AuditLogger(config.notifications.webhookUrl);
+const notifyOnlineNow = () => notifyOnline(client, config, audit);
+const context = {
+  aiClient, conversations, aiConfig: config.ai, config, audit,
+  notifyOnline: notifyOnlineNow,
+  totalFunctions: totalFunctionCount
+};
 
 client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Bot aktif sebagai ${readyClient.user.tag} di ${readyClient.guilds.cache.size} server.`);
@@ -24,11 +32,19 @@ client.once(Events.ClientReady, async (readyClient) => {
       await startWebDashboard({ client: readyClient, aiClient, config, commandCount: commandData.length });
     } catch (error) {
       console.error(`Dashboard gagal dimulai: ${safeError(error)}`);
+      void audit.error('Dashboard startup', error);
     }
+  }
+  try {
+    await notifyOnlineNow();
+  } catch (error) {
+    console.error(`Notifikasi online gagal: ${safeError(error)}`);
+    void audit.error('Notifikasi online', error);
   }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {
+  if (interaction.isChatInputCommand()) void audit.command(interaction);
   await handleCommand(interaction, context);
 });
 
@@ -56,8 +72,14 @@ client.on(Events.MessageCreate, async (message) => {
   }
 });
 
-client.on(Events.Error, (error) => console.error('Discord client error:', error));
-process.on('unhandledRejection', (error) => console.error('Unhandled rejection:', error));
+client.on(Events.Error, (error) => {
+  console.error('Discord client error:', error);
+  void audit.error('Discord client', error);
+});
+process.on('unhandledRejection', (error) => {
+  console.error('Unhandled rejection:', error);
+  void audit.error('Unhandled rejection', error);
+});
 
 if (config.registerCommandsOnStart) {
   try {

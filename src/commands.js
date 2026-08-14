@@ -8,12 +8,10 @@ import {
 import { applyTemplate, previewTemplate } from './setup-engine.js';
 import { generateServerPlan } from './server-planner.js';
 import { cleanChannelName, safeError, splitDiscordMessage } from './utils.js';
+import { accessDeniedMessage, canUseCommand } from './access-control.js';
+import { groupedFunctionCount, handleRoleCommand, roleCommandData } from './role-commands.js';
 
-const admin = PermissionFlagsBits.Administrator;
-const manageChannels = PermissionFlagsBits.ManageChannels;
-const manageRoles = PermissionFlagsBits.ManageRoles;
-
-export const commandData = [
+const coreCommandData = [
   new SlashCommandBuilder()
     .setName('ai').setDescription('Chat dengan AI LMArena/OpenAI-compatible')
     .addSubcommand((s) => s.setName('chat').setDescription('Kirim pertanyaan ke AI').addStringOption((o) => o.setName('pesan').setDescription('Pertanyaan Anda').setRequired(true).setMaxLength(2000)))
@@ -22,7 +20,6 @@ export const commandData = [
 
   new SlashCommandBuilder()
     .setName('setup-server').setDescription('Preview atau terapkan template role/category/channel JSON')
-    .setDefaultMemberPermissions(admin)
     .addStringOption((o) => o.setName('aksi').setDescription('Pilih preview dahulu sebelum apply').setRequired(true).addChoices(
       { name: 'Preview (tidak mengubah server)', value: 'preview' },
       { name: 'Apply (buat item yang belum ada)', value: 'apply' }
@@ -31,7 +28,7 @@ export const commandData = [
     .addStringOption((o) => o.setName('konfirmasi').setDescription('Ketik APPLY untuk aksi apply')),
 
   new SlashCommandBuilder()
-    .setName('role').setDescription('Kelola role server').setDefaultMemberPermissions(manageRoles)
+    .setName('role').setDescription('Kelola role server')
     .addSubcommand((s) => s.setName('buat').setDescription('Buat role baru')
       .addStringOption((o) => o.setName('nama').setDescription('Nama role').setRequired(true).setMaxLength(100))
       .addStringOption((o) => o.setName('warna').setDescription('Warna hex, contoh #3498DB'))
@@ -44,7 +41,7 @@ export const commandData = [
     .addSubcommand((s) => s.setName('daftar').setDescription('Tampilkan daftar role')),
 
   new SlashCommandBuilder()
-    .setName('category').setDescription('Kelola kategori server').setDefaultMemberPermissions(manageChannels)
+    .setName('category').setDescription('Kelola kategori server')
     .addSubcommand((s) => s.setName('buat').setDescription('Buat kategori')
       .addStringOption((o) => o.setName('nama').setDescription('Nama kategori').setRequired(true).setMaxLength(100))
       .addBooleanOption((o) => o.setName('private').setDescription('Sembunyikan dari @everyone'))
@@ -55,7 +52,7 @@ export const commandData = [
     .addSubcommand((s) => s.setName('daftar').setDescription('Tampilkan daftar kategori')),
 
   new SlashCommandBuilder()
-    .setName('channel').setDescription('Kelola text/voice/announcement/forum channel').setDefaultMemberPermissions(manageChannels)
+    .setName('channel').setDescription('Kelola text/voice/announcement/forum channel')
     .addSubcommand((s) => s.setName('buat').setDescription('Buat channel baru')
       .addStringOption((o) => o.setName('nama').setDescription('Nama channel').setRequired(true).setMaxLength(100))
       .addStringOption((o) => o.setName('tipe').setDescription('Tipe channel').setRequired(true).addChoices(
@@ -72,7 +69,7 @@ export const commandData = [
     .addSubcommand((s) => s.setName('daftar').setDescription('Tampilkan daftar channel')),
 
   new SlashCommandBuilder()
-    .setName('buat-server').setDescription('Buat struktur server otomatis dari prompt AI').setDefaultMemberPermissions(admin)
+    .setName('buat-server').setDescription('Buat struktur server otomatis dari prompt AI')
     .addSubcommand((s) => s.setName('prompt').setDescription('Buat dan preview rencana dari deskripsi Anda')
       .addStringOption((o) => o.setName('deskripsi').setDescription('Contoh: buat server gaming dengan ruang staff private').setRequired(true).setMaxLength(2000)))
     .addSubcommand((s) => s.setName('lihat').setDescription('Lihat lagi preview rencana terakhir'))
@@ -81,7 +78,7 @@ export const commandData = [
     .addSubcommand((s) => s.setName('batal').setDescription('Hapus rencana terakhir')),
 
   new SlashCommandBuilder()
-    .setName('auto-setup').setDescription('Buat role, kategori, channel, dan aksesnya sekaligus').setDefaultMemberPermissions(admin)
+    .setName('auto-setup').setDescription('Buat role, kategori, channel, dan aksesnya sekaligus')
     .addStringOption((o) => o.setName('kategori').setDescription('Nama kategori, contoh STAFF').setRequired(true).setMaxLength(100))
     .addStringOption((o) => o.setName('akses').setDescription('Ketik semua, atau nama role dipisah koma').setRequired(true).setMaxLength(1000))
     .addStringOption((o) => o.setName('text_channels').setDescription('Nama text channel dipisah koma').setMaxLength(1000))
@@ -89,16 +86,19 @@ export const commandData = [
     .addStringOption((o) => o.setName('roles').setDescription('Role tambahan yang dibuat, dipisah koma').setMaxLength(1000)),
 
   new SlashCommandBuilder()
-    .setName('akses-channel').setDescription('Izinkan atau larang role melihat sebuah channel').setDefaultMemberPermissions(manageChannels)
+    .setName('akses-channel').setDescription('Izinkan atau larang role melihat sebuah channel')
     .addChannelOption((o) => o.setName('channel').setDescription('Channel yang diatur').setRequired(true))
     .addRoleOption((o) => o.setName('role').setDescription('Role yang diatur, termasuk @everyone').setRequired(true))
     .addBooleanOption((o) => o.setName('bisa_melihat').setDescription('Ya = izinkan, Tidak = larang').setRequired(true)),
 
-  new SlashCommandBuilder().setName('clear').setDescription('Hapus sejumlah pesan terbaru').setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages)
+  new SlashCommandBuilder().setName('clear').setDescription('Hapus sejumlah pesan terbaru')
     .addIntegerOption((o) => o.setName('jumlah').setDescription('1–100 pesan').setRequired(true).setMinValue(1).setMaxValue(100)),
   new SlashCommandBuilder().setName('serverinfo').setDescription('Tampilkan informasi server'),
   new SlashCommandBuilder().setName('ping').setDescription('Cek respons bot')
 ].map((command) => command.toJSON());
+
+export const commandData = [...coreCommandData, ...roleCommandData];
+export const totalFunctionCount = 22 + groupedFunctionCount;
 
 const channelTypes = {
   text: ChannelType.GuildText,
@@ -165,11 +165,23 @@ function planPreview(guild, template) {
 
 export async function handleCommand(interaction, context) {
   if (!interaction.isChatInputCommand()) return;
-  if (!interaction.inGuild() && !['ai', 'ping'].includes(interaction.commandName)) {
+  if (!interaction.inGuild()) {
     return interaction.reply({ content: 'Command ini hanya dapat digunakan di server.', ephemeral: true });
   }
 
   try {
+    const accessConfig = context.config?.access;
+    if (accessConfig) {
+      const member = await interaction.guild.members.fetch(interaction.user.id);
+      if (!canUseCommand(member, interaction.commandName, accessConfig)) {
+        return interaction.reply({ content: accessDeniedMessage(interaction.commandName, accessConfig), ephemeral: true });
+      }
+    }
+
+    if (['member', 'admin', 'owner', 'permission', 'helpmember', 'helpadmin', 'helpowner'].includes(interaction.commandName)) {
+      return await handleRoleCommand(interaction, context);
+    }
+
     switch (interaction.commandName) {
       case 'ping':
         return interaction.reply({ content: `Pong! WebSocket: ${interaction.client.ws.ping} ms`, ephemeral: true });
@@ -198,6 +210,7 @@ export async function handleCommand(interaction, context) {
     }
   } catch (error) {
     console.error(`Command /${interaction.commandName} gagal:`, error);
+    void context.audit?.error(`Command /${interaction.commandName}`, error);
     const content = `❌ ${safeError(error).slice(0, 1800)}`;
     if (interaction.deferred || interaction.replied) return interaction.editReply({ content });
     return interaction.reply({ content, ephemeral: true });

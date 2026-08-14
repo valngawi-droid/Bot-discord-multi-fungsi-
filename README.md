@@ -57,18 +57,56 @@ npm start
 
 | Command | Fungsi | Permission pengguna |
 |---|---|---|
-| `/buat-server prompt/lihat/terapkan/batal` | Buat struktur server dari prompt AI dengan preview | Administrator |
-| `/auto-setup` | Buat role, kategori, text/voice channel, dan akses sekaligus | Administrator |
-| `/akses-channel` | Izinkan/larang role melihat channel | Manage Channels |
-| `/setup-server` | Preview/apply template JSON tingkat lanjut | Administrator |
-| `/role buat/hapus/daftar` | Kelola role | Manage Roles |
-| `/category buat/hapus/daftar` | Kelola kategori | Manage Channels |
-| `/channel buat/hapus/daftar` | Kelola channel | Manage Channels |
-| `/ai chat/reset/status` | Chat dan status AI | Semua anggota |
-| `/clear` | Hapus 1–100 pesan terbaru | Manage Messages |
-| `/serverinfo`, `/ping` | Informasi umum | Semua anggota |
+| `/member ...`, `/helpmember` | 20 utilitas profil/server/random | Member, Admin, Owner |
+| `/admin ...`, `/helpadmin` | 25 fitur moderasi dan channel | Admin, Owner |
+| `/owner ...`, `/helpowner` | 20 kontrol bot/server | Owner |
+| `/permission ...` | 8 pengaturan view/chat/voice/private/sync role | Owner |
+| `/buat-server prompt/lihat/terapkan/batal` | Buat struktur server dari prompt AI dengan preview | Owner |
+| `/auto-setup` | Buat role, kategori, text/voice channel, dan akses sekaligus | Owner |
+| `/akses-channel` | Izinkan/larang role melihat channel | Owner |
+| `/setup-server` | Preview/apply template JSON tingkat lanjut | Owner |
+| `/role`, `/category`, `/channel` | Kelola struktur Discord | Owner |
+| `/ai chat/reset/status`, `/serverinfo`, `/ping` | Chat AI dan informasi | Member, Admin, Owner |
+| `/clear` | Hapus 1–100 pesan terbaru | Admin, Owner |
+
+Bot menyediakan **98 fungsi aktif** dalam 18 slash command tingkat atas. Fungsi dikelompokkan agar tidak memenuhi daftar Discord dan tetap berada di bawah batas 100 command aplikasi. Gunakan `/helpmember`, `/helpadmin`, dan `/helpowner` untuk daftar sesuai role.
+
+Hierarki akses bersifat menurun: Owner dapat memakai semua fitur; Admin dapat memakai Admin dan Member; Member hanya fitur Member. Konfigurasikan ID role:
+
+```env
+OWNER_ROLE_ID=1537795490262028349
+ADMIN_ROLE_ID=1537795491847340096
+MEMBER_ROLE_ID=1537795510772039870
+```
 
 Command penghapusan meminta kata `HAPUS`. Penghapusan kategori hanya diizinkan jika kategori kosong. `/setup-server` bersifat **non-destruktif**: hanya membuat yang belum ada dan tidak menghapus atau menimpa item lama.
+
+### Permission role/category/channel
+
+Owner dapat mengatur akses secara rinci:
+
+```text
+/permission view channel:#staff-chat role:@Moderator mode:Izinkan
+/permission chat channel:#pengumuman role:@Member mode:Larang
+/permission voice channel:Lounge role:@Member mode:Izinkan
+/permission private channel:#owner-only role:@Owner
+/permission readonly channel:#peraturan role:@Member
+/permission sync-category channel:#staff-chat
+/permission inspect channel:#staff-chat
+```
+
+### Log webhook dan status online
+
+Hapus webhook yang pernah dibagikan ke chat dan buat webhook baru. Simpan URL baru hanya di `.env`:
+
+```env
+LOG_WEBHOOK_URL=https://discord.com/api/webhooks/ID/TOKEN_BARU
+ONLINE_CATEGORY_ID=1537796852995461281
+ONLINE_CHANNEL_NAME=bot-status
+ONLINE_MENTION_EVERYONE=true
+```
+
+Saat startup, bot membuat/memakai `#bot-status` di kategori tersebut, mengirim status online, dan mention `@everyone`. Webhook menerima audit aman: startup, command, setup/moderasi, dan error tanpa isi pesan, prompt, token, atau API key.
 
 ### Website untuk prompt panjang (Termux)
 
@@ -270,7 +308,7 @@ npm test
 ### Troubleshooting
 
 - **Missing Permissions / Missing Access:** naikkan posisi role bot dan periksa permission bot pada server/category.
-- **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `11 slash command terdaftar otomatis`.
+- **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `18 slash command terdaftar otomatis` (berisi 98 fungsi/subcommand).
 - **401/403 dari AI:** revoke key yang pernah dibagikan, buat key baru, lalu periksa hak akses API/model.
 - **503/high demand dari Gemini:** gunakan `gemini-3.5-flash-lite`; bot otomatis mencoba ulang dan berpindah ke `GEMINI_FALLBACK_MODELS`.
 - **Invalid Form Body / channel type:** announcement channel membutuhkan Community Server. Bot otomatis membuat text channel sebagai pengganti jika Community belum aktif.

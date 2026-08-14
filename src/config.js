@@ -30,6 +30,17 @@ export const config = {
     port: numberEnv('DASHBOARD_PORT', 3000),
     token: process.env.DASHBOARD_TOKEN || ''
   },
+  access: {
+    ownerRoleId: process.env.OWNER_ROLE_ID || '1537795490262028349',
+    adminRoleId: process.env.ADMIN_ROLE_ID || '1537795491847340096',
+    memberRoleId: process.env.MEMBER_ROLE_ID || '1537795510772039870'
+  },
+  notifications: {
+    categoryId: process.env.ONLINE_CATEGORY_ID || '1537796852995461281',
+    channelName: process.env.ONLINE_CHANNEL_NAME || 'bot-status',
+    mentionEveryone: boolEnv('ONLINE_MENTION_EVERYONE', true),
+    webhookUrl: process.env.LOG_WEBHOOK_URL || ''
+  },
   ai: {
     provider: aiProvider,
     baseUrl: (aiProvider === 'gemini'
