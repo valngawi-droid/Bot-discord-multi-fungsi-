@@ -36,7 +36,7 @@ GEMINI_API_KEY=masukkan_key_baru_di_sini
 GEMINI_MODEL=gemini-flash-latest
 ```
 
-`DISCORD_GUILD_ID` direkomendasikan ketika pengembangan agar slash command muncul segera. Jika dikosongkan, `npm run deploy` mendaftarkan command global dan propagasinya dapat memerlukan waktu.
+`DISCORD_GUILD_ID` direkomendasikan agar slash command muncul segera. `REGISTER_COMMANDS_ON_START=true` mendaftarkan command otomatis saat bot dinyalakan. Jika guild ID dikosongkan, command didaftarkan secara global dan propagasinya dapat memerlukan waktu.
 
 ### Pengaturan Developer Portal
 
@@ -208,7 +208,7 @@ npm test
 ### Troubleshooting
 
 - **Missing Permissions / Missing Access:** naikkan posisi role bot dan periksa permission bot pada server/category.
-- **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, lalu jalankan ulang `npm run deploy`.
+- **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `8 slash command terdaftar otomatis`.
 - **401/403 dari AI:** revoke key yang pernah dibagikan, buat key baru, lalu periksa hak akses API/model.
 - **404 dari Gemini:** biarkan `GEMINI_BASE_URL` memakai nilai default dan periksa `GEMINI_MODEL`.
 - **404 dari OpenAI-compatible:** base URL biasanya harus berakhir dengan `/v1`.

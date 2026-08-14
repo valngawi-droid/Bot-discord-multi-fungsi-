@@ -2,6 +2,7 @@ import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { AiClient, ConversationStore } from './ai-client.js';
 import { handleCommand } from './commands.js';
 import { config, requireDiscordConfig } from './config.js';
+import { registerCommands } from './register-commands.js';
 import { safeError, splitDiscordMessage } from './utils.js';
 
 requireDiscordConfig();
@@ -49,5 +50,15 @@ client.on(Events.MessageCreate, async (message) => {
 
 client.on(Events.Error, (error) => console.error('Discord client error:', error));
 process.on('unhandledRejection', (error) => console.error('Unhandled rejection:', error));
+
+if (config.registerCommandsOnStart) {
+  try {
+    const result = await registerCommands(config);
+    console.log(`${result.count} slash command terdaftar otomatis ke ${result.scope}.`);
+  } catch (error) {
+    console.error(`Gagal mendaftarkan slash command: ${safeError(error)}`);
+    console.error('Periksa DISCORD_TOKEN, DISCORD_CLIENT_ID, DISCORD_GUILD_ID, dan scope applications.commands.');
+  }
+}
 
 await client.login(config.discordToken);

@@ -23,6 +23,7 @@ export const config = {
   discordToken: process.env.DISCORD_TOKEN,
   clientId: process.env.DISCORD_CLIENT_ID,
   guildId: process.env.DISCORD_GUILD_ID,
+  registerCommandsOnStart: boolEnv('REGISTER_COMMANDS_ON_START', true),
   ai: {
     provider: aiProvider,
     baseUrl: (aiProvider === 'gemini'
