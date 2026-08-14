@@ -11,6 +11,10 @@ test('hierarki role diwariskan', () => {
   assert.equal(canUseCommand(fakeMember('admin'), 'ai', access), true);
   assert.equal(canUseCommand(fakeMember('member'), 'admin', access), false);
   assert.equal(canUseCommand(fakeMember('member'), 'help', access), true);
+  assert.equal(canUseCommand(fakeMember('member'), 'm-avatar', access), true);
+  assert.equal(canUseCommand(fakeMember('member'), 'a-lock', access), false);
+  assert.equal(canUseCommand(fakeMember('admin'), 'a-lock', access), true);
+  assert.equal(canUseCommand(fakeMember('admin'), 'o-health', access), false);
 });
 
 test('command pengelolaan default khusus owner', () => {

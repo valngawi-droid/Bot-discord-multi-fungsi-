@@ -15,6 +15,9 @@ export function memberAccessLevel(member, access) {
 }
 
 export function requiredLevel(commandName) {
+  if (commandName.startsWith('m-')) return 'member';
+  if (commandName.startsWith('a-')) return 'admin';
+  if (commandName.startsWith('o-')) return 'owner';
   if (OWNER_COMMANDS.has(commandName)) return 'owner';
   if (ADMIN_COMMANDS.has(commandName)) return 'admin';
   if (MEMBER_COMMANDS.has(commandName)) return 'member';

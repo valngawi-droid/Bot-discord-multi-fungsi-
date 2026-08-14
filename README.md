@@ -58,6 +58,9 @@ npm start
 | Command | Fungsi | Permission pengguna |
 |---|---|---|
 | `/help` | Semua command yang tersedia sesuai hierarki role | Member, Admin, Owner |
+| `/m-*` | 35 shortcut utilitas teks, profil, random, encode/hash | Member, Admin, Owner |
+| `/a-*` | 25 shortcut moderasi role/channel/member | Admin, Owner |
+| `/o-*` | 20 shortcut status, export, konfigurasi, audit | Owner |
 | `/member ...`, `/helpmember` | 20 utilitas profil/server/random | Member, Admin, Owner |
 | `/admin ...`, `/helpadmin` | 25 fitur moderasi dan channel | Admin, Owner |
 | `/owner ...`, `/helpowner` | 20 kontrol bot/server | Owner |
@@ -71,7 +74,9 @@ npm start
 | `/ai chat/reset/status`, `/serverinfo`, `/ping` | Chat AI dan informasi | Member, Admin, Owner |
 | `/clear` | Hapus 1–100 pesan terbaru | Admin, Owner |
 
-Bot menyediakan **104 fungsi aktif** dalam 20 slash command tingkat atas. Discord membatasi maksimal 100 top-level application command per scope, sehingga ratusan fungsi harus dikelompokkan sebagai subcommand. Gunakan `/help` untuk menampilkan seluruh command sesuai role secara otomatis; output panjang dibagi menjadi beberapa pesan. `/helpmember`, `/helpadmin`, dan `/helpowner` menyediakan daftar ringkas.
+Bot menyediakan **184 fungsi aktif** dan tepat **100 top-level slash command**, yaitu batas maksimal application command Discord per scope. Tambahan terdiri dari 35 utilitas/shortcut Member (`/m-*`), 25 moderasi Admin (`/a-*`), dan 20 kontrol Owner (`/o-*`). Gunakan `/help` untuk menampilkan seluruh command sesuai role secara otomatis; output panjang dibagi menjadi beberapa pesan. `/helpmember`, `/helpadmin`, dan `/helpowner` menyediakan daftar ringkas.
+
+Karena seluruh 100 slot sudah digunakan, fitur berikutnya harus ditambahkan sebagai subcommand atau menggantikan command lama.
 
 Hierarki akses bersifat menurun: Owner dapat memakai semua fitur; Admin dapat memakai Admin dan Member; Member hanya fitur Member. Konfigurasikan ID role:
 
@@ -340,7 +345,7 @@ npm test
 ### Troubleshooting
 
 - **Missing Permissions / Missing Access:** naikkan posisi role bot dan periksa permission bot pada server/category.
-- **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `20 slash command terdaftar otomatis` (berisi 104 fungsi/subcommand).
+- **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `100 slash command terdaftar otomatis` (berisi 184 fungsi/subcommand).
 - **401/403 dari AI:** revoke key yang pernah dibagikan, buat key baru, lalu periksa hak akses API/model.
 - **503/high demand dari Gemini:** gunakan `gemini-3.5-flash-lite`; bot otomatis mencoba ulang dan berpindah ke `GEMINI_FALLBACK_MODELS`.
 - **Invalid Form Body / channel type:** announcement channel membutuhkan Community Server. Bot otomatis membuat text channel sebagai pengganti jika Community belum aktif.

@@ -3,6 +3,7 @@ import {
 } from 'discord.js';
 import { splitDiscordMessage } from './utils.js';
 import { memberAccessLevel } from './access-control.js';
+import { extraCommandsByTier } from './extra-commands.js';
 
 const memberNames = [
   ['profile', 'Lihat profil anggota'], ['avatar', 'Lihat avatar anggota'], ['server', 'Informasi singkat server'],
@@ -126,6 +127,7 @@ async function allHelp(interaction, context) {
     '`/ai chat` `/ai reset` `/ai status` — Asisten Gemini',
     '`/ping` `/serverinfo` — Informasi bot/server',
     ...memberNames.map(([name, description]) => `\`/member ${name}\` — ${description}`),
+    ...extraCommandsByTier.member.map(([name, description]) => `\`/${name}\` — ${description}`),
     '`/helpmember` — Help ringkas Member'
   ];
   if (['admin', 'owner'].includes(level)) {
@@ -133,6 +135,7 @@ async function allHelp(interaction, context) {
       '\n**ADMIN**',
       '`/clear` — Hapus pesan',
       ...adminNames.map(([name, description]) => `\`/admin ${name}\` — ${description}`),
+      ...extraCommandsByTier.admin.map(([name, description]) => `\`/${name}\` — ${description}`),
       '`/helpadmin` — Help ringkas Admin'
     );
   }
@@ -140,6 +143,7 @@ async function allHelp(interaction, context) {
     lines.push(
       '\n**OWNER**',
       ...ownerNames.map(([name, description]) => `\`/owner ${name}\` — ${description}`),
+      ...extraCommandsByTier.owner.map(([name, description]) => `\`/${name}\` — ${description}`),
       '`/permission view|chat|voice|readonly|private|public|sync-category|inspect` — Permission manual',
       '`/autokeamanan analisis|langsung|lihat|terapkan|batal` — Auto permission berbasis AI',
       '`/buat-server prompt|lihat|terapkan|batal` — Setup melalui prompt AI',
