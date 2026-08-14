@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>AI Discord Server Builder</title>
+  <style>
+    :root{color-scheme:dark;--bg:#090b12;--card:#121622;--line:#283044;--text:#eef2ff;--muted:#9ba6be;--primary:#7c5cff;--ok:#39d98a;--danger:#ff647c}
+    *{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at top,#24204c 0,#090b12 42%);color:var(--text);font:15px/1.5 system-ui,sans-serif;min-height:100vh}.wrap{width:min(920px,100%);margin:auto;padding:24px 16px 60px}header{padding:18px 0 22px}h1{font-size:clamp(25px,7vw,42px);margin:0 0 8px}h2{font-size:18px;margin:0 0 12px}.sub,.hint{color:var(--muted)}.card{background:rgba(18,22,34,.94);border:1px solid var(--line);border-radius:18px;padding:18px;margin:14px 0;box-shadow:0 18px 50px #0005}label{display:block;font-weight:700;margin-bottom:8px}textarea,input{width:100%;background:#090c14;color:var(--text);border:1px solid #343e55;border-radius:12px;padding:13px;font:inherit;outline:none}textarea{min-height:280px;resize:vertical;font-family:ui-monospace,monospace}textarea:focus,input:focus{border-color:var(--primary);box-shadow:0 0 0 3px #7c5cff22}.row{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}button{border:0;border-radius:11px;padding:12px 16px;color:white;background:var(--primary);font-weight:800;font-size:14px;cursor:pointer}button.secondary{background:#293148}button.danger{background:#9d3347}button:disabled{opacity:.55;cursor:wait}.status{display:none;border-radius:10px;padding:11px 13px;margin-top:12px}.status.show{display:block}.status.ok{background:#123c2b;color:#8ff0bd}.status.err{background:#491d29;color:#ffb0bd}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:700px){.grid{grid-template-columns:1fr}textarea{min-height:360px}}pre{background:#080b12;border:1px solid var(--line);border-radius:12px;padding:13px;white-space:pre-wrap;word-break:break-word;max-height:420px;overflow:auto;color:#cdd7ef}.badge{display:inline-block;background:#282454;color:#cfc5ff;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700}.hidden{display:none}.confirm{max-width:170px}.footer{text-align:center;color:var(--muted);font-size:12px;margin-top:28px}
+  </style>
+</head>
+<body><main class="wrap">
+  <header><span class="badge">LOCAL TERMUX DASHBOARD</span><h1>AI Discord Server Builder</h1><div class="sub" id="guild">Memuat status bot...</div></header>
+  <section class="card">
+    <label for="prompt">Prompt setup Discord</label>
+    <textarea id="prompt" placeholder="Contoh: Buat server komunitas gaming dengan role Admin, Moderator, Member. Kategori INFORMASI bisa dilihat semua orang tetapi hanya Admin yang bisa mengirim. Kategori STAFF hanya bisa dilihat Admin dan Moderator..."></textarea>
+    <div class="hint"><span id="count">0</span>/50.000 karakter — Anda dapat paste prompt panjang di sini.</div>
+    <div id="tokenBox" class="hidden" style="margin-top:12px"><label for="token">Dashboard token</label><input id="token" type="password" autocomplete="off" placeholder="Isi DASHBOARD_TOKEN"></div>
+    <div class="row"><button id="plan">✨ Buat Preview</button><button id="clear" class="secondary">Bersihkan</button></div>
+    <div id="status" class="status"></div>
+  </section>
+  <section id="result" class="hidden">
+    <div class="grid">
+      <div class="card"><h2>Preview tindakan</h2><pre id="actions"></pre></div>
+      <div class="card"><h2>Template JSON</h2><pre id="json"></pre></div>
+    </div>
+    <div class="card">
+      <h2>Terapkan ke Discord</h2><p class="hint">Periksa preview terlebih dahulu. Proses hanya membuat item yang belum ada.</p>
+      <div class="row"><input class="confirm" id="confirmation" placeholder="Ketik APPLY"><button id="apply" class="danger">Terapkan Sekarang</button></div>
+      <div id="applyStatus" class="status"></div>
+    </div>
+  </section>
+  <div class="footer">Dashboard hanya untuk pengelolaan server Anda. Jangan membuka port ini ke internet.</div>
+</main>
+<script>
+const $=id=>document.getElementById(id);let planId=null,needsToken=false;
+function auth(){return $('token').value}function status(el,msg,ok=false){el.textContent=msg;el.className='status show '+(ok?'ok':'err')}
+async function api(path,body){const r=await fetch(path,{method:body?'POST':'GET',headers:{'content-type':'application/json'},body:body?JSON.stringify({...body,token:auth()}):undefined});const data=await r.json().catch(()=>({error:'Respons server tidak valid'}));if(!r.ok)throw new Error(data.error||'Request gagal');return data}
+(async()=>{try{const s=await api('/api/status');$('guild').textContent=`Terhubung ke ${s.guild} • ${s.commands} slash command • AI ${s.ai?'aktif':'nonaktif'}`;needsToken=s.requiresToken;$('tokenBox').classList.toggle('hidden',!needsToken)}catch(e){$('guild').textContent=e.message}})();
+$('prompt').addEventListener('input',()=>{$('count').textContent=$('prompt').value.length});
+$('clear').onclick=()=>{$('prompt').value='';$('count').textContent='0';$('result').classList.add('hidden');$('status').className='status';planId=null};
+$('plan').onclick=async()=>{const b=$('plan');b.disabled=true;b.textContent='⏳ AI sedang menyusun...';$('status').className='status';try{const d=await api('/api/plan',{prompt:$('prompt').value});planId=d.planId;$('actions').textContent=d.actions.join('\n');$('json').textContent=JSON.stringify(d.template,null,2);$('result').classList.remove('hidden');status($('status'),`Preview siap: ${d.actions.length} item. Rencana berlaku 30 menit.`,true);$('result').scrollIntoView({behavior:'smooth'})}catch(e){status($('status'),e.message)}finally{b.disabled=false;b.textContent='✨ Buat Preview'}};
+$('apply').onclick=async()=>{if(!planId)return status($('applyStatus'),'Buat preview terlebih dahulu.');const b=$('apply');b.disabled=true;try{const d=await api('/api/apply',{planId,confirmation:$('confirmation').value});status($('applyStatus'),`Berhasil: ${d.roles} role, ${d.categories} kategori, dan ${d.channels} channel dibuat.`,true);planId=null}catch(e){status($('applyStatus'),e.message)}finally{b.disabled=false}};
+</script></body></html>

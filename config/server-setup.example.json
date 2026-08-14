@@ -1,0 +1,67 @@
+{
+  "roles": [
+    {
+      "name": "Admin",
+      "color": "#E74C3C",
+      "hoist": true,
+      "mentionable": false,
+      "permissions": ["ManageGuild", "ManageChannels", "ManageRoles", "ManageMessages"]
+    },
+    {
+      "name": "Moderator",
+      "color": "#F39C12",
+      "hoist": true,
+      "mentionable": true,
+      "permissions": ["ManageMessages", "ModerateMembers", "KickMembers"]
+    },
+    {
+      "name": "Member",
+      "color": "#3498DB",
+      "hoist": false,
+      "mentionable": true,
+      "permissions": []
+    }
+  ],
+  "categories": [
+    {
+      "name": "INFORMASI",
+      "channels": [
+        {
+          "name": "peraturan",
+          "type": "text",
+          "topic": "Peraturan server",
+          "everyone": { "allow": ["ViewChannel", "ReadMessageHistory"], "deny": ["SendMessages"] },
+          "roles": {
+            "Admin": { "allow": ["ViewChannel", "SendMessages", "ManageMessages"] },
+            "Moderator": { "allow": ["ViewChannel", "SendMessages", "ManageMessages"] }
+          }
+        },
+        {
+          "name": "pengumuman",
+          "type": "announcement",
+          "topic": "Pengumuman resmi server"
+        }
+      ]
+    },
+    {
+      "name": "KOMUNITAS",
+      "channels": [
+        { "name": "umum", "type": "text", "topic": "Obrolan umum" },
+        { "name": "ai-chat", "type": "text", "topic": "Tanya asisten AI dengan /ai chat" },
+        { "name": "Ngobrol", "type": "voice", "userLimit": 0, "bitrate": 64000 }
+      ]
+    },
+    {
+      "name": "STAFF",
+      "everyone": { "deny": ["ViewChannel"] },
+      "roles": {
+        "Admin": { "allow": ["ViewChannel"] },
+        "Moderator": { "allow": ["ViewChannel"] }
+      },
+      "channels": [
+        { "name": "staff-chat", "type": "text" },
+        { "name": "Staff Voice", "type": "voice" }
+      ]
+    }
+  ]
+}
