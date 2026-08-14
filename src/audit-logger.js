@@ -12,7 +12,7 @@ export class AuditLogger {
     const safe = redact(String(description || '')).slice(0, 4000);
     try {
       await this.webhook.send({
-        username: 'Discord Bot Audit',
+        username: 'AiPall Audit Log',
         embeds: [new EmbedBuilder().setTitle(String(title).slice(0, 256)).setDescription(safe || '-').setColor(color).setTimestamp()],
         allowedMentions: { parse: [] }
       });
