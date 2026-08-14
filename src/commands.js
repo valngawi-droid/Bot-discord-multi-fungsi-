@@ -152,7 +152,7 @@ async function aiCommand(interaction, { aiClient, conversations, aiConfig }) {
   const key = historyKey(interaction);
   if (action === 'status') {
     return interaction.reply({
-      content: `AI: **${aiClient.configured ? 'siap' : 'belum dikonfigurasi'}**\nModel: \`${aiConfig.model || '-'}\`\nEndpoint: ${aiConfig.baseUrl ? 'terisi' : 'kosong'}\nAPI key: ${aiConfig.apiKey ? 'terisi' : 'kosong'}`,
+      content: `AI: **${aiClient.configured ? 'siap' : 'belum dikonfigurasi'}**\nProvider: \`${aiConfig.provider}\`\nModel: \`${aiConfig.model || '-'}\`\nEndpoint: ${aiConfig.baseUrl ? 'terisi' : 'kosong'}\nAPI key: ${aiConfig.apiKey ? 'terisi' : 'kosong'}`,
       ephemeral: true
     });
   }

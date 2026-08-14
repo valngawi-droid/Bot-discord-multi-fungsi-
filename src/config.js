@@ -14,14 +14,22 @@ function boolEnv(name, fallback) {
   return ['1', 'true', 'yes', 'on'].includes(value.toLowerCase());
 }
 
+const aiProvider = (process.env.AI_PROVIDER || (process.env.GEMINI_API_KEY ? 'gemini' : 'openai-compatible')).toLowerCase();
+if (!['gemini', 'openai-compatible'].includes(aiProvider)) {
+  throw new Error('AI_PROVIDER harus "gemini" atau "openai-compatible".');
+}
+
 export const config = {
   discordToken: process.env.DISCORD_TOKEN,
   clientId: process.env.DISCORD_CLIENT_ID,
   guildId: process.env.DISCORD_GUILD_ID,
   ai: {
-    baseUrl: (process.env.LMARENA_BASE_URL || '').replace(/\/$/, ''),
-    apiKey: process.env.LMARENA_API_KEY || '',
-    model: process.env.LMARENA_MODEL || '',
+    provider: aiProvider,
+    baseUrl: (aiProvider === 'gemini'
+      ? (process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta')
+      : (process.env.LMARENA_BASE_URL || '')).replace(/\/$/, ''),
+    apiKey: aiProvider === 'gemini' ? (process.env.GEMINI_API_KEY || '') : (process.env.LMARENA_API_KEY || ''),
+    model: aiProvider === 'gemini' ? (process.env.GEMINI_MODEL || 'gemini-flash-latest') : (process.env.LMARENA_MODEL || ''),
     systemPrompt: process.env.AI_SYSTEM_PROMPT || 'Kamu adalah asisten yang ramah dan membantu.',
     maxTokens: numberEnv('AI_MAX_TOKENS', 1200),
     temperature: numberEnv('AI_TEMPERATURE', 0.7),

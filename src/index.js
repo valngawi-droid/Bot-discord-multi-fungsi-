@@ -15,7 +15,7 @@ const context = { aiClient, conversations, aiConfig: config.ai };
 
 client.once(Events.ClientReady, (readyClient) => {
   console.log(`Bot aktif sebagai ${readyClient.user.tag} di ${readyClient.guilds.cache.size} server.`);
-  console.log(`AI: ${aiClient.configured ? `aktif (${config.ai.model})` : 'belum dikonfigurasi'}`);
+  console.log(`AI: ${aiClient.configured ? `aktif (${config.ai.provider}/${config.ai.model})` : 'belum dikonfigurasi'}`);
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {

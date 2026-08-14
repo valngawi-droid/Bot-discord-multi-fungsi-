@@ -1,15 +1,15 @@
-# Bot Discord Multi Fungsi + AI LMArena
+# Bot Discord Multi Fungsi + AI Gemini/LMArena
 
 Bot Discord berbahasa Indonesia untuk:
 
 - membuat dan menghapus **role, kategori, text/voice/announcement/forum/stage channel** melalui slash command;
 - menyusun seluruh server dari **template JSON yang idempotent** (item yang sudah ada tidak dibuat ulang);
 - mengatur channel private dan akses berbasis role;
-- chat AI melalui endpoint **OpenAI-compatible**, termasuk penyedia/bridge LMArena;
+- chat AI melalui **Google Gemini API** atau endpoint OpenAI-compatible/LMArena;
 - percakapan AI per pengguna/per channel, reset riwayat, mention bot, dan pembatasan channel AI;
 - utilitas `/clear`, `/serverinfo`, dan `/ping`.
 
-> **Catatan LMArena:** ekosistem LMArena memiliki beberapa layanan/bridge dengan URL berbeda. Bot tidak mengasumsikan satu URL tidak resmi tertentu. Isi base URL, API key, dan model dari layanan OpenAI-compatible yang memang Anda gunakan. API key hanya dibaca dari `.env`, tidak pernah ditaruh di source code atau Discord.
+API key hanya dibaca dari `.env`, tidak pernah ditaruh di source code atau ditampilkan oleh bot.
 
 ## Persyaratan
 
@@ -31,9 +31,9 @@ DISCORD_TOKEN=token_bot_discord
 DISCORD_CLIENT_ID=id_aplikasi_discord
 DISCORD_GUILD_ID=id_server_uji
 
-LMARENA_BASE_URL=https://endpoint-provider-anda.example/v1
-LMARENA_API_KEY=sk-rahasia
-LMARENA_MODEL=nama-model-persis
+AI_PROVIDER=gemini
+GEMINI_API_KEY=masukkan_key_baru_di_sini
+GEMINI_MODEL=gemini-flash-latest
 ```
 
 `DISCORD_GUILD_ID` direkomendasikan ketika pengembangan agar slash command muncul segera. Jika dikosongkan, `npm run deploy` mendaftarkan command global dan propagasinya dapat memerlukan waktu.
@@ -116,14 +116,36 @@ Permission kategori otomatis digabungkan ke channel di dalamnya. Aturan channel 
 
 ## Konfigurasi AI
 
+### Google Gemini (disarankan)
+
+Buat key baru di Google AI Studio, lalu masukkan langsung ke `.env`—jangan kirim melalui chat:
+
+```env
+AI_PROVIDER=gemini
+GEMINI_API_KEY=key_baru_anda
+GEMINI_MODEL=gemini-flash-latest
+GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+```
+
+### OpenAI-compatible/LMArena
+
+```env
+AI_PROVIDER=openai-compatible
+LMARENA_BASE_URL=https://endpoint-provider-anda.example/v1
+LMARENA_API_KEY=key_provider
+LMARENA_MODEL=nama-model-persis
+```
+
+Bot menambahkan `/chat/completions` pada base URL OpenAI-compatible.
+
+Pengaturan umum:
+
 - `AI_CHANNEL_IDS`: ID channel dipisahkan koma; kosong berarti semua channel.
 - `AI_REPLY_ON_MENTION=false`: matikan respons mention.
 - `AI_SYSTEM_PROMPT`: karakter/instruksi bot.
 - `AI_MAX_TOKENS`, `AI_TEMPERATURE`, `AI_TIMEOUT_MS`: kontrol request.
 
 Riwayat hanya disimpan di memori (maksimal 12 pesan per pengguna/channel) dan hilang saat bot restart. Bot tidak mencetak API key ke log. `/ai status` hanya menunjukkan apakah key sudah terisi.
-
-Jika provider memberi endpoint lengkap seperti `https://host.example/v1`, masukkan nilai itu sebagai `LMARENA_BASE_URL`; bot menambahkan `/chat/completions`.
 
 ## Instalasi di Android lewat Termux
 
@@ -186,7 +208,8 @@ npm test
 
 - **Missing Permissions / Missing Access:** naikkan posisi role bot dan periksa permission bot pada server/category.
 - **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, lalu jalankan ulang `npm run deploy`.
-- **401/403 dari AI:** periksa API key dan hak akses model.
-- **404 dari AI:** base URL biasanya harus berakhir dengan `/v1`.
-- **Unknown model:** isi `LMARENA_MODEL` dengan ID model persis dari provider.
+- **401/403 dari AI:** revoke key yang pernah dibagikan, buat key baru, lalu periksa hak akses API/model.
+- **404 dari Gemini:** biarkan `GEMINI_BASE_URL` memakai nilai default dan periksa `GEMINI_MODEL`.
+- **404 dari OpenAI-compatible:** base URL biasanya harus berakhir dengan `/v1`.
+- **Unknown model:** periksa `GEMINI_MODEL` atau `LMARENA_MODEL` sesuai provider.
 - **Bot tidak membalas mention:** aktifkan Message Content Intent atau gunakan `/ai chat`.
