@@ -8,7 +8,7 @@ export class AiClient {
     return Boolean(this.config.baseUrl && this.config.apiKey && this.config.model);
   }
 
-  async chat(messages) {
+  async chat(messages, options = {}) {
     if (!this.configured) {
       const keyName = this.config.provider === 'gemini' ? 'GEMINI_API_KEY' : 'LMARENA_API_KEY';
       throw new Error(`AI belum dikonfigurasi. Isi ${keyName} dan nama model di file .env.`);
@@ -18,8 +18,8 @@ export class AiClient {
     const timer = setTimeout(() => controller.abort(), this.config.timeoutMs);
     try {
       return this.config.provider === 'gemini'
-        ? await this.chatGemini(messages, controller.signal)
-        : await this.chatOpenAiCompatible(messages, controller.signal);
+        ? await this.chatGemini(messages, controller.signal, options)
+        : await this.chatOpenAiCompatible(messages, controller.signal, options);
     } catch (error) {
       if (error?.name === 'AbortError') throw new Error(`API AI timeout setelah ${this.config.timeoutMs} ms.`);
       throw error;
@@ -28,7 +28,7 @@ export class AiClient {
     }
   }
 
-  async chatGemini(messages, signal) {
+  async chatGemini(messages, signal, options) {
     const models = [...new Set([
       this.config.model,
       ...(this.config.fallbackModels || [])
@@ -53,8 +53,8 @@ export class AiClient {
             parts: [{ text: String(message.content) }]
           })),
           generationConfig: {
-            maxOutputTokens: this.config.maxTokens,
-            temperature: this.config.temperature
+            maxOutputTokens: options.maxTokens || this.config.maxTokens,
+            temperature: options.temperature ?? this.config.temperature
           }
         }),
         signal
@@ -79,7 +79,7 @@ export class AiClient {
     throw lastError;
   }
 
-  async chatOpenAiCompatible(messages, signal) {
+  async chatOpenAiCompatible(messages, signal, options) {
     const response = await this.fetch(`${this.config.baseUrl}/chat/completions`, {
       method: 'POST',
       headers: {
@@ -89,8 +89,8 @@ export class AiClient {
       body: JSON.stringify({
         model: this.config.model,
         messages: [{ role: 'system', content: this.config.systemPrompt }, ...messages],
-        max_tokens: this.config.maxTokens,
-        temperature: this.config.temperature,
+        max_tokens: options.maxTokens || this.config.maxTokens,
+        temperature: options.temperature ?? this.config.temperature,
         stream: false
       }),
       signal

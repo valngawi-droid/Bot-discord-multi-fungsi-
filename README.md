@@ -70,9 +70,30 @@ npm start
 
 Command penghapusan meminta kata `HAPUS`. Penghapusan kategori hanya diizinkan jika kategori kosong. `/setup-server` bersifat **non-destruktif**: hanya membuat yang belum ada dan tidak menghapus atau menimpa item lama.
 
-### Membuat server lewat prompt AI
+### Website untuk prompt panjang (Termux)
 
-Tulis struktur yang Anda inginkan dengan bahasa biasa:
+Dashboard web berjalan bersama bot dan menerima prompt hingga 50.000 karakter. Tambahkan ke `.env`:
+
+```env
+DASHBOARD_ENABLED=true
+DASHBOARD_HOST=127.0.0.1
+DASHBOARD_PORT=3000
+DASHBOARD_TOKEN=
+```
+
+Jalankan `npm start`, lalu buka alamat berikut di browser pada Android yang sama:
+
+```text
+http://127.0.0.1:3000
+```
+
+Paste prompt panjang, tekan **Buat Preview**, periksa tindakan dan JSON, ketik `APPLY`, lalu tekan **Terapkan Sekarang**. Rencana berlaku 30 menit. Dashboard hanya mengelola server pada `DISCORD_GUILD_ID`.
+
+`127.0.0.1` membuat dashboard hanya dapat diakses dari perangkat sendiri. Jangan menggantinya dengan `0.0.0.0` atau membuka port ke internet. Untuk perlindungan tambahan, isi `DASHBOARD_TOKEN` dengan string rahasia; website kemudian menampilkan kolom token.
+
+### Membuat server lewat prompt AI di Discord
+
+Untuk prompt maksimal 2.000 karakter, tulis struktur yang Anda inginkan dengan bahasa biasa:
 
 ```text
 /buat-server prompt deskripsi:Buat server gaming. Buat role Admin merah, Moderator oranye, dan Member biru. Buat kategori INFORMASI berisi peraturan dan pengumuman yang hanya dapat dikirim Admin. Buat kategori KOMUNITAS berisi umum, bot-command, dan voice Ngobrol. Buat kategori STAFF private yang hanya bisa dilihat Admin dan Moderator, berisi staff-chat dan Staff Voice.

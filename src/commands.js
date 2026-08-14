@@ -6,7 +6,8 @@ import {
   SlashCommandBuilder
 } from 'discord.js';
 import { applyTemplate, previewTemplate } from './setup-engine.js';
-import { cleanChannelName, extractJsonObject, safeError, splitDiscordMessage } from './utils.js';
+import { generateServerPlan } from './server-planner.js';
+import { cleanChannelName, safeError, splitDiscordMessage } from './utils.js';
 
 const admin = PermissionFlagsBits.Administrator;
 const manageChannels = PermissionFlagsBits.ManageChannels;
@@ -148,25 +149,6 @@ function getPendingPlan(interaction) {
   if (plan && Date.now() - plan.createdAt <= PLAN_TTL_MS) return plan;
   pendingServerPlans.delete(key);
   return null;
-}
-
-function setupGeneratorPrompt(description) {
-  return `Anda adalah generator konfigurasi server Discord. Ubah permintaan pengguna menjadi SATU object JSON valid, tanpa markdown dan tanpa penjelasan.
-
-Schema wajib:
-{"roles":[{"name":"string","color":"#RRGGBB","hoist":false,"mentionable":true,"permissions":["PermissionName"]}],"categories":[{"name":"string","everyone":{"allow":["PermissionName"],"deny":["PermissionName"]},"roles":{"Nama Role":{"allow":["PermissionName"],"deny":["PermissionName"]}},"channels":[{"name":"string","type":"text|voice|announcement|forum|stage","topic":"string","everyone":{"allow":[],"deny":[]},"roles":{}}]}]}
-
-Aturan:
-- Semua role yang disebut dalam category/channel roles WAJIB ada di array roles.
-- Gunakan nama permission discord.js yang valid, misalnya ViewChannel, SendMessages, ReadMessageHistory, ManageMessages, Connect, Speak, ManageChannels, ManageRoles, ModerateMembers, KickMembers.
-- Untuk area private: category.everyone.deny berisi ViewChannel dan role yang berhak mendapat allow ViewChannel.
-- Untuk channel pengumuman/peraturan: @everyone dapat ViewChannel dan ReadMessageHistory tetapi deny SendMessages; Admin/Moderator allow SendMessages.
-- Jangan membuat permission Administrator kecuali diminta secara eksplisit.
-- Maksimal 20 role, 20 kategori, dan 80 channel. Buat struktur yang ringkas dan masuk akal.
-- Properti opsional yang tidak diperlukan boleh dihilangkan. Output harus dapat diparse JSON.parse.
-
-Permintaan pengguna:
-${description}`;
 }
 
 function planPreview(guild, template) {
@@ -372,10 +354,7 @@ async function promptSetupCommand(interaction, { aiClient }) {
 
   await interaction.deferReply({ ephemeral: true });
   const description = interaction.options.getString('deskripsi', true);
-  const answer = await aiClient.chat([{ role: 'user', content: setupGeneratorPrompt(description) }]);
-  const template = extractJsonObject(answer);
-  // previewTemplate sekaligus memvalidasi seluruh nama permission, tipe, dan referensi role.
-  previewTemplate(interaction.guild, template);
+  const { template } = await generateServerPlan(aiClient, interaction.guild, description);
   pendingServerPlans.set(key, { template, createdAt: Date.now() });
   return interaction.editReply({
     content: planPreview(interaction.guild, template),

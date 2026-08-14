@@ -1,9 +1,10 @@
 import { Client, Events, GatewayIntentBits } from 'discord.js';
 import { AiClient, ConversationStore } from './ai-client.js';
-import { handleCommand } from './commands.js';
+import { commandData, handleCommand } from './commands.js';
 import { config, requireDiscordConfig } from './config.js';
 import { registerCommands } from './register-commands.js';
 import { safeError, splitDiscordMessage } from './utils.js';
+import { startWebDashboard } from './web-dashboard.js';
 
 requireDiscordConfig();
 
@@ -15,9 +16,16 @@ const aiClient = new AiClient(config.ai);
 const conversations = new ConversationStore(12);
 const context = { aiClient, conversations, aiConfig: config.ai };
 
-client.once(Events.ClientReady, (readyClient) => {
+client.once(Events.ClientReady, async (readyClient) => {
   console.log(`Bot aktif sebagai ${readyClient.user.tag} di ${readyClient.guilds.cache.size} server.`);
   console.log(`AI: ${aiClient.configured ? `aktif (${config.ai.provider}/${config.ai.model})` : 'belum dikonfigurasi'}`);
+  if (config.dashboard.enabled) {
+    try {
+      await startWebDashboard({ client: readyClient, aiClient, config, commandCount: commandData.length });
+    } catch (error) {
+      console.error(`Dashboard gagal dimulai: ${safeError(error)}`);
+    }
+  }
 });
 
 client.on(Events.InteractionCreate, async (interaction) => {

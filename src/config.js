@@ -24,6 +24,12 @@ export const config = {
   clientId: process.env.DISCORD_CLIENT_ID,
   guildId: process.env.DISCORD_GUILD_ID,
   registerCommandsOnStart: boolEnv('REGISTER_COMMANDS_ON_START', true),
+  dashboard: {
+    enabled: boolEnv('DASHBOARD_ENABLED', true),
+    host: process.env.DASHBOARD_HOST || '127.0.0.1',
+    port: numberEnv('DASHBOARD_PORT', 3000),
+    token: process.env.DASHBOARD_TOKEN || ''
+  },
   ai: {
     provider: aiProvider,
     baseUrl: (aiProvider === 'gemini'
