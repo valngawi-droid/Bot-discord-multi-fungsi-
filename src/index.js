@@ -6,9 +6,10 @@ import { safeError, splitDiscordMessage } from './utils.js';
 
 requireDiscordConfig();
 
-const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent]
-});
+const intents = [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages];
+if (config.ai.replyOnMention) intents.push(GatewayIntentBits.MessageContent);
+
+const client = new Client({ intents });
 const aiClient = new AiClient(config.ai);
 const conversations = new ConversationStore(12);
 const context = { aiClient, conversations, aiConfig: config.ai };

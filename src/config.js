@@ -35,7 +35,7 @@ export const config = {
     temperature: numberEnv('AI_TEMPERATURE', 0.7),
     timeoutMs: numberEnv('AI_TIMEOUT_MS', 60_000),
     channelIds: new Set((process.env.AI_CHANNEL_IDS || '').split(',').map((id) => id.trim()).filter(Boolean)),
-    replyOnMention: boolEnv('AI_REPLY_ON_MENTION', true)
+    replyOnMention: boolEnv('AI_REPLY_ON_MENTION', false)
   }
 };
 

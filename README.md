@@ -141,7 +141,8 @@ Bot menambahkan `/chat/completions` pada base URL OpenAI-compatible.
 Pengaturan umum:
 
 - `AI_CHANNEL_IDS`: ID channel dipisahkan koma; kosong berarti semua channel.
-- `AI_REPLY_ON_MENTION=false`: matikan respons mention.
+- `AI_REPLY_ON_MENTION=false`: gunakan hanya slash command tanpa privileged Message Content Intent (nilai default dan disarankan).
+- `AI_REPLY_ON_MENTION=true`: aktifkan respons mention; wajib mengaktifkan **Message Content Intent** di Discord Developer Portal.
 - `AI_SYSTEM_PROMPT`: karakter/instruksi bot.
 - `AI_MAX_TOKENS`, `AI_TEMPERATURE`, `AI_TIMEOUT_MS`: kontrol request.
 
@@ -212,4 +213,6 @@ npm test
 - **404 dari Gemini:** biarkan `GEMINI_BASE_URL` memakai nilai default dan periksa `GEMINI_MODEL`.
 - **404 dari OpenAI-compatible:** base URL biasanya harus berakhir dengan `/v1`.
 - **Unknown model:** periksa `GEMINI_MODEL` atau `LMARENA_MODEL` sesuai provider.
-- **Bot tidak membalas mention:** aktifkan Message Content Intent atau gunakan `/ai chat`.
+- **Used disallowed intents:** set `AI_REPLY_ON_MENTION=false`; atau aktifkan Message Content Intent di Developer Portal jika memang membutuhkan respons mention.
+- **Bot tidak membalas mention:** aktifkan Message Content Intent dan set `AI_REPLY_ON_MENTION=true`, atau gunakan `/ai chat` tanpa privileged intent.
+- **Token terlihat di screenshot/chat:** segera gunakan **Reset Token** di Developer Portal dan revoke API key terkait. Jangan gunakan kembali credential lama.
