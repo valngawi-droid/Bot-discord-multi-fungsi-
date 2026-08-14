@@ -125,6 +125,56 @@ Riwayat hanya disimpan di memori (maksimal 12 pesan per pengguna/channel) dan hi
 
 Jika provider memberi endpoint lengkap seperti `https://host.example/v1`, masukkan nilai itu sebagai `LMARENA_BASE_URL`; bot menambahkan `/chat/completions`.
 
+## Instalasi di Android lewat Termux
+
+Gunakan Termux versi yang masih menerima pembaruan. Di Termux, jalankan:
+
+```bash
+pkg update -y
+pkg install -y git
+termux-setup-storage
+cd ~
+git clone https://github.com/valngawi-droid/Bot-discord-multi-fungsi-.git
+cd Bot-discord-multi-fungsi-
+bash scripts/install-termux.sh
+```
+
+Installer memasang Node.js LTS, Git, Nano, tmux, dependency npm, dan membuat `.env` tanpa menimpa konfigurasi lama. Setelah selesai:
+
+```bash
+nano .env
+npm run deploy
+npm start
+```
+
+Di Nano, simpan dengan `Ctrl+O`, Enter, lalu keluar dengan `Ctrl+X`.
+
+### Menjalankan bot terus di Termux
+
+Android dapat menghentikan Termux ketika aplikasi masuk latar belakang. Nonaktifkan optimasi baterai untuk Termux pada pengaturan Android, lalu gunakan wake lock dan tmux:
+
+```bash
+termux-wake-lock
+tmux new -s discordbot
+bash scripts/start-termux.sh
+```
+
+- Lepas dari tmux tanpa menghentikan bot: tekan `Ctrl+B`, lepaskan, lalu tekan `D`.
+- Buka kembali sesi bot: `tmux attach -t discordbot`.
+- Hentikan bot: masuk ke sesi tmux lalu tekan `Ctrl+C`.
+- Lepaskan wake lock setelah bot dihentikan: `termux-wake-unlock`.
+
+Setelah source code diperbarui:
+
+```bash
+cd ~/Bot-discord-multi-fungsi-
+git pull
+npm ci
+npm run deploy
+```
+
+Token dan API key tetap hanya berada di `.env`. Jangan mengirim isi file tersebut ke Discord atau GitHub. Menjalankan bot 24/7 dari Android bergantung pada koneksi dan kebijakan baterai perangkat; VPS lebih stabil untuk penggunaan produksi.
+
 ## Pengembangan
 
 ```bash
