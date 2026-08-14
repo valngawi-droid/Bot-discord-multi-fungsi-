@@ -8,6 +8,18 @@ const TYPES = {
   stage: ChannelType.GuildStageVoice
 };
 
+function resolvedChannelType(guild, type) {
+  // Discord hanya mengizinkan announcement channel pada Community Server.
+  if (type === 'announcement' && !guild.features.includes('COMMUNITY')) return ChannelType.GuildText;
+  return TYPES[type];
+}
+
+function displayedChannelType(guild, type) {
+  return type === 'announcement' && resolvedChannelType(guild, type) === ChannelType.GuildText
+    ? 'text; announcement butuh Community'
+    : type;
+}
+
 function assert(condition, message) {
   if (!condition) throw new Error(`Template tidak valid: ${message}`);
 }
@@ -117,7 +129,7 @@ export function previewTemplate(guild, input) {
     actions.push(`${existingCategory ? 'LEWATI' : 'BUAT'} kategori ${category.name}`);
     for (const channel of category.channels) {
       const exists = guild.channels.cache.find((c) => c.parentId === existingCategory?.id && c.name.toLowerCase() === channel.name.toLowerCase());
-      actions.push(`${exists ? 'LEWATI' : 'BUAT'} channel ${category.name}/${channel.name} (${channel.type})`);
+      actions.push(`${exists ? 'LEWATI' : 'BUAT'} channel ${category.name}/${channel.name} (${displayedChannelType(guild, channel.type)})`);
     }
   }
   return actions;
@@ -168,7 +180,7 @@ export async function applyTemplate(guild, input, reason) {
       );
       channel = await guild.channels.create({
         name: channelDefinition.name,
-        type: TYPES[channelDefinition.type],
+        type: resolvedChannelType(guild, channelDefinition.type),
         parent: category.id,
         topic: ['text', 'announcement', 'forum'].includes(channelDefinition.type) ? channelDefinition.topic : undefined,
         bitrate: ['voice', 'stage'].includes(channelDefinition.type) ? channelDefinition.bitrate : undefined,

@@ -108,6 +108,11 @@ const channelTypes = {
   stage: ChannelType.GuildStageVoice
 };
 
+function commandChannelType(guild, typeName) {
+  if (typeName === 'announcement' && !guild.features.includes('COMMUNITY')) return ChannelType.GuildText;
+  return channelTypes[typeName];
+}
+
 function parsePermissions(value) {
   if (!value) return [];
   return value.split(',').map((name) => name.trim()).filter(Boolean).map((name) => {
@@ -300,7 +305,7 @@ async function channelCommand(interaction) {
   }
   if (action === 'buat') {
     const typeName = interaction.options.getString('tipe', true);
-    const type = channelTypes[typeName];
+    const type = commandChannelType(interaction.guild, typeName);
     const rawName = interaction.options.getString('nama', true);
     const role = interaction.options.getRole('akses_role');
     const channel = await interaction.guild.channels.create({

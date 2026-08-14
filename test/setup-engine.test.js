@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { validateTemplate } from '../src/setup-engine.js';
+import { Collection } from 'discord.js';
+import { previewTemplate, validateTemplate } from '../src/setup-engine.js';
 
 const valid = {
   roles: [{ name: 'Member', color: '#3498DB', permissions: ['SendMessages'] }],
@@ -13,4 +14,17 @@ test('permission tidak dikenal ditolak', () => {
 });
 test('referensi role yang tidak dideklarasikan ditolak', () => {
   assert.throws(() => validateTemplate({ roles: [], categories: [{ name: 'X', roles: { Staff: { allow: [] } }, channels: [] }] }), /tidak ada/);
+});
+
+test('announcement ditampilkan sebagai text fallback jika Community nonaktif', () => {
+  const guild = {
+    features: [],
+    roles: { cache: new Collection() },
+    channels: { cache: new Collection() }
+  };
+  const actions = previewTemplate(guild, {
+    roles: [],
+    categories: [{ name: 'INFO', channels: [{ name: 'news', type: 'announcement' }] }]
+  });
+  assert.match(actions.join('\n'), /text; announcement butuh Community/);
 });

@@ -273,6 +273,7 @@ npm test
 - **Slash command belum terlihat:** isi `DISCORD_GUILD_ID`, set `REGISTER_COMMANDS_ON_START=true`, pastikan bot diundang dengan scope `bot applications.commands`, lalu restart. Terminal harus menampilkan `11 slash command terdaftar otomatis`.
 - **401/403 dari AI:** revoke key yang pernah dibagikan, buat key baru, lalu periksa hak akses API/model.
 - **503/high demand dari Gemini:** gunakan `gemini-3.5-flash-lite`; bot otomatis mencoba ulang dan berpindah ke `GEMINI_FALLBACK_MODELS`.
+- **Invalid Form Body / channel type:** announcement channel membutuhkan Community Server. Bot otomatis membuat text channel sebagai pengganti jika Community belum aktif.
 - **404 dari Gemini:** biarkan `GEMINI_BASE_URL` memakai nilai default dan periksa `GEMINI_MODEL`.
 - **404 dari OpenAI-compatible:** base URL biasanya harus berakhir dengan `/v1`.
 - **Unknown model:** periksa `GEMINI_MODEL` atau `LMARENA_MODEL` sesuai provider.
